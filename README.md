@@ -66,7 +66,8 @@ bundles the local and global predictions, as well as the Amsterdam no2 tif toget
 
 Multiple datasets are identified including the scripts/processes in which every dataset is of use:
 * **5TIFS**: contains most of the predictors projected onto the Amsterdam area. Relevant in the following scripts:
-	* 
+	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Amsterdam.R 
+	* 04 composing dataset/Local/ComposingGrid-AllPredictors.R
 * **polygonbuilding_studyArea**: contains buildings in The Netherlands and Germany, represented by polygons, in shapefile-format:
 	* 01 adding variables to initial datasets/Global/AssignBuildingDensity to NO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignBuildingDensity to NO2MSs.R
@@ -74,6 +75,7 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Utrecht.R (processed building density data)
+	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Amsterdam.R (processed building density data)
 	* 02 composing dataset/Local/ComposingModellingDataset-Local.R (processed building density data)
 	
 * **InitialGlobalDataset**: measurement stations including predictor information
@@ -119,7 +121,9 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Utrecht.R (processed traffic data)
+	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Amsterdam.R (processed traffic data)
 	* 04 composing dataset/Local/ComposingModellingDataset-Local.R (processed traffic data)
+	* 04 composing dataset/Local/ComposingGrid-AllPredictors.R (processed traffic data)
 
 * **ModellingDataset-Global**: all predictors and target (NO2) related to the (global) measurement stations, in csv-format: 
 	* 03 feature selection/Global/cv-aic-mse-r2-median-global-random-forest.ipynb 
@@ -134,7 +138,9 @@ Multiple datasets are identified including the scripts/processes in which every 
 	
 * **df_cv_median (local)**: the sequential order of importance for every predictor variable (local) measured via cross-validated median, in csv-format:
 	* 03 feature selection/Local/cv-aic-mse-r2-median-global-random-forest.ipynb 
-		
+	
+* **grid100Amsterdam**
+	* 04 composing dataset/Local/ComposingGrid-AllPredictors.R
 * **grid100Bayreuth**: 100 meter by 100 meter grid for the Bayreuth area, in geopackage-format:
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R
 	_NOTE: due to a large file size, this data is not included in the repository._
@@ -188,7 +194,7 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 01 adding variables to initial datasets/Local/AssignNDVIToNO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToRoads.R
 	* 01 adding variables to initial datasets/Local/Assigning TrafficVolume to NO2MSs.R
-	* 04 composing dataset/Local/ComposingModellingDataset-Local.R 
+	* 02 composing dataset/Local/ComposingModellingDataset-Local.R 
 	
 * **ModellingDataset-Local**: all predictors and target (NO2) related to the (local) measurement stations, in csv-format:
 	* 03 feature selection/Local/cv-aic-mse-r2-median-local.ipynb
