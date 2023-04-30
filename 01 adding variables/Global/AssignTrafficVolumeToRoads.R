@@ -241,7 +241,7 @@ location_tc_stations <- location_tc_stations %>% rename(id_meetlocatie = dgl_loc
 tc_stations_xy <- st_as_sf(location_tc_stations, coords=c("POINT_X", "POINT_Y"))
 st_crs(tc_stations_xy) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
 
-sf::st_write(tc_stations_xy, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample", layer="telpunten3035", driver = "ESRI Shapefile")
+sf::st_write(tc_stations_xy, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample", layer="telpunten", driver = "ESRI Shapefile")
 
 ## == combine traffic data with coords == ##
 
@@ -349,7 +349,7 @@ for(i in road_types)
 TrafficVolume_RoadsNL <- rbind(result_variables[[1]], result_variables[[2]])
 
 #export option
-sf::st_write(TrafficVolume_RoadsNL, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic',layer='TrafficVolume_RoadsNL3035', driver = "ESRI Shapefile")
+sf::st_write(TrafficVolume_RoadsNL, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic',layer='TrafficVolume_RoadsNL', driver = "ESRI Shapefile")
 
 ## == Combine Traffic Volume on German roads with Traffic Volume on Dutch Roads via merge operation == ##
 TrafficVolume_RoadsNL

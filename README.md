@@ -104,8 +104,7 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
 * **Telpunten_WGS84**: traffic station locations in The Netherlands:
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
-* **TrafficVolume_RoadsNetherlands**: roads in The Netherlands with traffic volume assigned, in shapefile-format
-	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToRoads.R
+
 
 * **TrafficVolume_StudyArea**: traffic volume represented by roads for The Netherlands and Germany:
 	* 01 adding variables to initial datasets/Local/Assigning TrafficVolume to NO2MSs.R
