@@ -21,36 +21,28 @@ library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
 
+#crs used: 3035
+#CRS 3035, also known as the Coordinate Reference System (CRS) with EPSG code 3035, is a specific projection used for mapping and spatial data analysis. 
+#It is designed for use in Europe and is based on the Lambert Azimuthal Equal Area projection.
+
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
-roads_StudyArea <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_StudyArea.shp')
+roads_NL <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_RoadsNetherlands.shp')
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
 ms_stations <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/LocalMeasurementStations.csv', sep= ",")
 
-ms_stations <- ms_stations %>% rename(Longitude = long, Latitude = lat)
-
 #create spatial dataframe from no2 measurement stations dataset
-ms_stations_sf <- st_as_sf(ms_stations, coords = c("Longitude", "Latitude"))
-ms_stations_sf$M_id <- seq(1, nrow(ms_stations_sf)) #import for later data processing (@ ## == CALCULATE AVERAGE TRAFFIC FOR EACH BUFFER == ##)
-# assign coordinate system
+ms_stations_sf <- st_as_sf(ms_stations, coords = c("long", "lat"))
 st_crs(ms_stations_sf) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
+ms_stations_sf$M_id <- seq(1, nrow(ms_stations_sf)) #unique identifier which will be used for later data processing
+ms_stations_sf<- ms_stations_sf %>% dplyr::select(geometry,M_id) #filter columns
+ms_stations_utm <- st_transform(ms_stations_sf, crs=3035)
 
-## == CREATE BUFFERS AROUND NO2 MEASUREMENT STATIONS == ##
-##  First project data into a planar coordinate system 
-
-#dfine coordinate reference system (planar)
-crs_utm = 3035
-#filter columns
-ms_stations_sf<- ms_stations_sf %>% dplyr::select(geometry,M_id)
-#apply projection system which is defined above
-ms_stations_utm <- st_transform(ms_stations_sf, crs=crs_utm)
-
-## == create for loop, thereby creating a different buffer per iteration == ##
+#create different buffers
 
 #initialize buffer parameters
 bufs = list(25, 50, 100, 400, 800)
-
-#create emply list where loop results are stored to
+#create for loop, thereby creating a different buffer per iteration.
 buffer_vars = list()
 #loop
 for(i in bufs){
@@ -65,62 +57,55 @@ for(i in bufs){
   buffer_vars[[paste("buf", i, "m", sep = "")]] <- buf_i
   
   #export option
-  layerStudyArea <- paste("buf", i, "m", sep = "")
-  print(layerStudyArea)
-  sf::st_write(buf_i, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local',layer=layerStudyArea, driver = "ESRI Shapefile")
+  layer <- paste("buf", i, "m", sep = "")
+  print(layer)
+
+  sf::st_write(buf_i, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local',layer=layer, driver = "ESRI Shapefile")
   
 }
 
 ## == CALCULATE AVERAGE TRAFFIC FOR EACH BUFFER == ##
 
 #transform crs of roads to match buffer's
-roads_StudyArea <- st_as_sf(roads_StudyArea)
-roads_utm <- st_transform(roads_StudyArea, crs=crs_utm)
-st_crs(roads_utm)
+roads_NL <- st_as_sf(roads_NL)
+roads_utm <- st_transform(roads_NL, crs=3035)
 
 #examine list where variables of previous loop were stored to.
 summary(buffer_vars)
-colnames(roads_utm)
-#filter dataset
-roads_utm <- roads_utm[, c("AvrgHrT", "geometry")]
-#rename
-roads_utm <- roads_utm %>% rename(AverageHourlyTraffic = AvrgHrT)
-
 
 #initialize parameters used in for loop
 j = 1
 i = 1
-#create empty list were data processing datasets can be stored to 
 merge_list = list()
 measurement_stations <- as.data.frame(ms_stations_utm)
 
-
+summary(buffer_vars)
 while(j <= length(buffer_vars)){
-  #clip - roads will be assigned to buffers 
+  #clip - building dataset will be assigned to buffers 
   clip <- roads_utm[buffer_vars[[j]],]
   layer_clip  <- paste0('clip', bufs[[i]], '.shp')
   print(layer_clip)
-  
   sf::st_write(clip, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local", layer=layer_clip, driver = "ESRI Shapefile")
-  
   ## == SELECT ROADS WITHIN BUFFER X == ##
   intersect_j <- st_intersection(clip, buffer_vars[[j]],  sp = TRUE)
   #compute length (m) for each polygon in dataset
   intersect_j$road_length <- st_length(intersect_j)
   #calculate accumulated traffic
-  intersect_j$trafroad <- intersect_j$road_length*intersect_j$AverageHourlyTraffic
-  #assign to variable for export purposes
-  layer_intersect  <- paste0('inter', bufs[[i]], '.shp')
+  intersect_j$trafroad <- intersect_j$road_length*intersect_j$AvrgHrT
+  
+  layer_intersect  <- paste0('intersect', bufs[[i]], '.shp')
   print(layer_intersect)
-  #export option
   sf::st_write(intersect_j, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local", layer=layer_intersect, driver = "ESRI Shapefile")
   
   #dissolve by common ID - polygons with similar buffer ID will be merged
   #the area of these polygons will be aggregated via "SUM"
-  dissolve <- intersect_j %>% group_by(M_id) %>% summarize(TotalLength = sum(road_length), AccTraffic = sum(trafroad))
+  dissolve <- intersect_j %>% group_by(M_id) 
+  
+  dissolve <- dissolve %>% summarize(TotalLength = sum(road_length), AccTraffic = sum(trafroad))
   #to get average traffic per buffer: Accumulated traffic buffer n / total road length buffer n
   dissolve[[paste("trafBuf", bufs[[i]], sep="")]] <- dissolve$AccTraffic / dissolve$TotalLength
   
+  #store 
   layer_dissolve  <- paste0('dissolve', bufs[[i]], '.shp')
   print(layer_dissolve)
   
@@ -132,37 +117,26 @@ while(j <= length(buffer_vars)){
   
   #store variable in loop
   merge_list[[paste0('merge', bufs[[i]])]] <- merge
-  
-  layer_merge  <- paste0('merge', bufs[[i]], '.shp')
-  print(layer_merge)
-  
+
+  layer_mer  <- paste0('merge', bufs[[i]], '.shp')
+  print(layer_mer)
+
   #export option
-  #sf::st_write(merge, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local", layer=layer_merge, driver = "ESRI Shapefile")
-  
+  sf::st_write(merge, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Local", layer=layer_mer, driver = "ESRI Shapefile")
+
   #next buffer dataset
   j = j+1
   i = i+1}
 
-#examine
+#verify if loop succeeded via summary
 summary(merge_list)
-
-## == joining traffic data with measurement stations and apply data cleaning == ##
 
 #merge all data frames together
 traffic_per_buf <- merge_list %>% reduce(full_join, by='M_id')
-#join measurement stations with traffic data
 ms_traffic_per_buf <- left_join(measurement_stations, traffic_per_buf, by = "M_id")
-
-ms_traffic_per_buf
-
-#filter to only relevant columns
 ms_traffic_per_buf <- ms_traffic_per_buf %>% dplyr::select(M_id, trafBuf25, trafBuf50, 
-                                                           trafBuf100, trafBuf400, trafBuf800, geometry)
+                                                           trafBuf100, trafBuf400, trafBuf800, geometry.x)
+ms_traffic_per_buf <- ms_traffic_per_buf %>% rename(geometry = geometry.x)
 
-#rename variable
-traffic_NO2_StudyArea <- ms_traffic_per_buf
-
-traffic_NO2_StudyArea
-
-sf::st_write(traffic_NO2_StudyArea, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/processed',layer='traffic_NO2_Local', driver = "ESRI Shapefile")
-
+#export
+sf::st_write(ms_traffic_per_buf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/processed", layer='traffic_NO2_Local', driver = "ESRI Shapefile")

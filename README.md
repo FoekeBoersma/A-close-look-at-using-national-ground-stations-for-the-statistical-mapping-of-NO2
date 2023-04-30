@@ -98,6 +98,10 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 01 adding variables to initial datasets/Global/Processing_JaweData.R
 * **Motorway_Primary_Germany**: all motorways and primary roads in Germany, represented by lines in shapefile-format:
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
+* **Motorway_Primary_NL**: all motorways and primary roads in The Netherlands, represented by lines in shapefile-format:
+	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
+	
+	
 * **Jawe_processed**: traffic count in Germany via traffic counting stations in shapefile-format(processed):
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
 * **intensiteit-snelheid-export- (RotterdamDenHaag/zuid/noord/West/Oost/Noord/overig)**:
@@ -105,9 +109,12 @@ Multiple datasets are identified including the scripts/processes in which every 
 * **Telpunten_WGS84**: traffic station locations in The Netherlands:
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoads.R
 
-
+* **TrafficVolume_RoadsNetherlands**: roads in The Netherlands with traffic volume assigned, in shapefile-format
+	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToRoads.R
+	
 * **TrafficVolume_StudyArea**: traffic volume represented by roads for The Netherlands and Germany:
-	* 01 adding variables to initial datasets/Local/Assigning TrafficVolume to NO2MSs.R
+	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToNO2MSs.R
+	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToNO2MSs.R
 	* 02 composing initial dataset/Global/ComposingModellingDataset-Global.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed traffic data)

@@ -47,7 +47,7 @@ roads_Germany_sf <- st_transform(roads_Germany_sf, crs=crs)
 roads_Germany_3035 <- st_transform(roads_Germany_sf, crs = 3035)
 
 # #optionally, export
-# sf::st_write(roads_Germany_3035, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/roads_Germany_3035.shp', driver = "ESRI Shapefile")
+# sf::st_write(roads_Germany_3035, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/roads_Germany.shp', driver = "ESRI Shapefile")
 
 #decrease dataset size and only keep relevant columns
 roads_Germany_3035 <- roads_Germany_3035 %>% dplyr::select(type, geometry) #type = 'Motorway' or 'Primary'
