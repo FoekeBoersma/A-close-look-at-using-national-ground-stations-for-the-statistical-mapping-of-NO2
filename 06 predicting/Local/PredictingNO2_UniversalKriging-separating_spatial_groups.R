@@ -32,7 +32,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/GlobalModelData/ModellingDataset-Global.csv', sep=';')
+data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
