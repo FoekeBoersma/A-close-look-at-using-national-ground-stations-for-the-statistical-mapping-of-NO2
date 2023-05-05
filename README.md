@@ -273,7 +273,7 @@ Multiple datasets are identified including the scripts/processes in which every 
 * **NL**: shapefile of The Netherlands
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToRoadsToNO2MSs.Rs
 
-* **Grid100_LocalPredictors_Amsterdam: Grid of Amsterdam with predictor information. A csv/xlsx representation is named **SpatialPredictionPatternsPredicting NO2-AllModelsAmsterdam100_xy**
+* **Grid100_LocalPredictors_Amsterdam**: Grid of Amsterdam with predictor information. A csv/xlsx representation is named **SpatialPredictionPatternsPredicting NO2-AllModelsAmsterdam100_xy**
 	* 06 predicting/Local/PredictingNO2_Linear.R
 	* 06 predicting/Local/PredictingNO2_Linear-separating_spatial_groups.R
 	* 06 predicting/Local/PredictingNO2_MEM.R
