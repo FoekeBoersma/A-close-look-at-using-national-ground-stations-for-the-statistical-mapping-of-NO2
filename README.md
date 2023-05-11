@@ -71,31 +71,31 @@ Multiple datasets are identified including the scripts/processes in which every 
 * **polygonbuilding_studyArea**: contains buildings in The Netherlands and Germany, represented by polygons, in shapefile-format:
 	* 01 adding variables to initial datasets/Global/AssignBuildingDensity to NO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignBuildingDensity to NO2MSs.R
-	* 02 composing initial dataset/Global/ComposingModellingDataset-Global.R (processed building density data)
+	* 02 composing initial dataset/Global/ComposingmodelingDataset-Global.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Utrecht.R (processed building density data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Amsterdam.R (processed building density data)
-	* 02 composing dataset/Local/ComposingModellingDataset-Local.R (processed building density data)
+	* 02 composing dataset/Local/ComposingmodelingDataset-Local.R (processed building density data)
 	
 * **InitialGlobalDataset**: measurement stations including predictor information
 	* 01 adding variables to initial datasets/Global/AssignBuildingDensity to NO2MSs.R
 	* 01 adding variables to initial datasets/Global/AssignNDVIToNO2MSs.R
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToNO2MSs.R
-	* 02 composing initial dataset/ComposingModellingDataset-Global.R
+	* 02 composing initial dataset/ComposingmodelingDataset-Global.R
 	
 * **mod13q1**: TIF file of NDVI:
 	* 01 adding variables to initial datasets/Global/AssignNDVIToNO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignNDVIToNO2MSs.R
-	* 02 composing initial dataset/Global/ComposingModellingDataset-Global.R (processed NDVI data)
+	* 02 composing initial dataset/Global/ComposingmodelingDataset-Global.R (processed NDVI data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed NDVI data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed NDVI data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Utrecht.R (processed NDVI data)
-	* 02 composing dataset/Local/ComposingModellingDataset-Local.R  (processed NDVI data)
+	* 02 composing dataset/Local/ComposingmodelingDataset-Local.R  (processed NDVI data)
 * **MonthlyPrecipitation**: monthly precipitation represented by 11322 stations across The Netherlands and Germany:
 	* 01 adding variables to initial datasets/Global/AssignPrecipitationToMSs.R
-	* 02 composing dataset/Global/ComposingModellingDataset-Global.R (processed precipitation data)
-	* 02 composing dataset/Local/ComposingModellingDataset-Local.R (processed precipitation data)
+	* 02 composing dataset/Global/ComposingmodelingDataset-Global.R (processed precipitation data)
+	* 02 composing dataset/Local/ComposingmodelingDataset-Local.R (processed precipitation data)
 * **Jawe2017.csv**: traffic count in Germany via traffic counting stations (raw):
 	* 01 adding variables to initial datasets/Global/Processing_JaweData.R
 * **Motorway_Primary_Germany**: all motorways and primary roads in Germany, represented by lines in shapefile-format:
@@ -117,15 +117,15 @@ Multiple datasets are identified including the scripts/processes in which every 
 * **TrafficVolume_StudyArea**: traffic volume represented by roads for The Netherlands and Germany:
 	* 01 adding variables to initial datasets/Global/AssignTrafficVolumeToNO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToNO2MSs.R
-	* 02 composing initial dataset/Global/ComposingModellingDataset-Global.R (processed traffic data)
+	* 02 composing initial dataset/Global/ComposingmodelingDataset-Global.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Bayreuth.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Hamburg.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Utrecht.R (processed traffic data)
 	* 04 composing dataset/Global/ComposingTestingGridDatasetGlobal-Amsterdam.R (processed traffic data)
-	* 04 composing dataset/Local/ComposingModellingDataset-Local.R (processed traffic data)
+	* 04 composing dataset/Local/ComposingmodelingDataset-Local.R (processed traffic data)
 	* 04 composing dataset/Local/ComposingGrid-AllPredictors.R (processed traffic data)
 
-* **ModellingDataset-Global**: all predictors and target (NO2) related to the (global) measurement stations, in csv-format: 
+* **modelingDataset-Global**: all predictors and target (NO2) related to the (global) measurement stations, in csv-format: 
 	* 03 feature selection/Global/cv-aic-mse-r2-median-global-random-forest.ipynb 
 	* 03 feature selection/Global/mean-cv-shap.ipynb 
 	* 03 feature selection/Global/median-cv-shap.ipynb 
@@ -212,9 +212,9 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 01 adding variables to initial datasets/Local/AssignNDVIToNO2MSs.R
 	* 01 adding variables to initial datasets/Local/AssignTrafficVolumeToRoads.R
 	* 01 adding variables to initial datasets/Local/Assigning TrafficVolume to NO2MSs.R
-	* 02 composing dataset/Local/ComposingModellingDataset-Local.R 
+	* 02 composing dataset/Local/ComposingmodelingDataset-Local.R 
 	
-* **ModellingDataset-Local**: all predictors and target (NO2) related to the (local) measurement stations, in csv-format:
+* **modelingDataset-Local**: all predictors and target (NO2) related to the (local) measurement stations, in csv-format:
 	* 03 feature selection/Local/cv-aic-mse-r2-median-local.ipynb
 	* 03 feature selection/Local/median-rank-cv-shap-local.ipynb
 	* 06 predicting/Local/PredictingNO2_Linear-separating_spatial_groups.R
@@ -227,11 +227,11 @@ Multiple datasets are identified including the scripts/processes in which every 
 	* 07 evaluating/Local/PredictingNO2_OK_SpatialGroupEvaluations.R
 
 * **PredictingDataset (global)**: the resulting dataset of the most important features combined with the number of most important features that yield the best metrics:
-	* 05 modeling/modelling-lasso.ipynb
-	* 05 modeling/modelling-lightgbm.ipynb
-	* 05 modeling/modelling-random forest.ipynb
-	* 05 modeling/modelling-ridge.ipynb
-	* 05 modeling/modelling-xgboost.ipynb
+	* 05 modeling/modeling-lasso.ipynb
+	* 05 modeling/modeling-lightgbm.ipynb
+	* 05 modeling/modeling-random forest.ipynb
+	* 05 modeling/modeling-ridge.ipynb
+	* 05 modeling/modeling-xgboost.ipynb
 	* 06 predicting/Global/predictions-all-models-global.ipynb
 	* 07 evaluating/Global/cross-validation-model-performances-global.ipynb 
 	
