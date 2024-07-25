@@ -1,0 +1,5 @@
+global:
+  buildings: data\input\BuildingDensity\polygon_studyArea.shp
+  no2: data\input\GlobalModelData\InitialGlobalDataset.csv
+
+out_location: data\output
