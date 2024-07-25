@@ -13,10 +13,7 @@ library(yaml)
 
 ## == import building density dataset == ##
 
-
-# config <- yaml.load_file("../config.yml")
 config <- yaml.load_file("src\\01 adding variables\\config.yml")
-
 
 # import shapefile of buildingsNL
 buildingsNL <- config$global$buildings
