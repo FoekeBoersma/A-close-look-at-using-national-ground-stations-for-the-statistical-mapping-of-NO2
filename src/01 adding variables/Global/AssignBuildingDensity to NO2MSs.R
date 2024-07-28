@@ -10,27 +10,40 @@ library(leaflet) # mapping in OSM
 library(terra) # rasterizeg
 library(stars) # necessary for st_rasterize
 library(yaml)
+library(rstudioapi)
 
 ## == import building density dataset == ##
 
-config <- yaml.load_file("src\\01 adding variables\\config.yml")
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
 
-# import shapefile of buildingsNL
-buildingsNL <- config$global$buildings
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 
+# location of shapefile buildingsNL
+buildingsNL_relative <- config$global$buildings
+# Construct the full path to the NDVI map directory based on the config file location
+buildings_map_dir <- normalizePath(file.path(parent_directory, buildingsNL_relative), winslash = "/")
+
+## == import no2 dataset == ##
 no2_dataset <- config$global$no2
-out_location <- config$out_location
-
-## == IMPORT NO2 MEASUREMENT STATIONS == ##
-NO2_stations <- read.csv(file = no2_dataset, sep = ";")
-
+no2_map_dir <- normalizePath(file.path(parent_directory, no2_dataset ), winslash = "/")
 # create spatial dataframe from no2 measurement stations dataset
 NO2_stations_sf <- st_as_sf(NO2_stations, coords = c("Longitude", "Latitude"))
 # assign ooordinate reference system (crs)
 st_crs(NO2_stations_sf) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
-
 NO2_stations_sf$M_id <- seq(1, 482) # assign unique identifier which will be used for coupling data later in the process
 NO2_stations_sf <- NO2_stations_sf %>% dplyr::select(FID, geometry, M_id) # filter columns
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
 ## == CREATE BUFFERS AROUND NO2 MEASUREMENT STATIONS == ##
 ##  First project data into a planar coordinate system
@@ -64,7 +77,8 @@ for (i in bufs) {
 summary(buffer_vars)
 
 # transform crs of building dataset to that of buffers to perform spatial calculations
-buildings_sf <- st_as_sf(buildingsNL)
+buildings_data <- st_read(buildings_map_dir)
+buildings_sf <- st_as_sf(buildings_data)
 
 # initialize parameters used in for loop
 j <- 1
@@ -150,4 +164,4 @@ ms_bldden_per_buf <- ms_bldden_per_buf %>% dplyr::select(M_id, BldDen100, BldDen
 print(ms_bldden_per_buf )
 
 # export option
-sf::st_write(ms_bldden_per_buf, dsn = out_location, layer = "BldDen_ms_StudyArea_Global", driver = "ESRI Shapefile")
+sf::st_write(ms_bldden_per_buf, dsn = out_location_dir, layer = "BldDen_ms_StudyArea_Global", driver = "ESRI Shapefile")

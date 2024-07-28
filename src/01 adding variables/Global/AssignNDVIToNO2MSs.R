@@ -11,26 +11,20 @@ library(sp)
 library(tmap) #for visualization purposes
 library(bnspatial)
 library(yaml)
+library(rstudioapi)
 
 ## == IMPORT RASTER (TIF) WITH NDVI VALUES == ##
-
-current_dir <- getwd()
-print(current_dir)
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
 # Move one level up in the directory
-config_dir <- dirname(current_dir)
-
+config_dir <- dirname(dirname(current_dir))
 # Construct the path to the YAML configuration file
 config_path <- file.path(config_dir, "config.yml")
-# Use dirname() to get the parent directory
-parent_directory <- dirname(dirname(dirname(current_dir)))
-
-print(parent_directory)
-
 # Read the YAML configuration file
 config <- yaml.load_file(config_path)
 
-# Get the directory where the config file is stored
-config_file_dir <- dirname(config_path)
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 
 # Extract the NDVI map directory path from the config and correct the path format
 ndvi_map_relative <- config$global$ndvi_map
@@ -44,9 +38,11 @@ a <- list.files(ndvi_map_dir, pattern = '\\.tif$', full.names = TRUE)
 #concatenate multiple vectors to single vector via "stack"-function.
 b = stack(a)
 
-## == IMPORT SPATIAL POINT DATASET == ##
+## == import no2 dataset == ##
 no2_dataset <- config$global$no2
 no2_map_dir <- normalizePath(file.path(parent_directory, no2_dataset ), winslash = "/")
+
+## == define output path == ##
 out_location <- config$out_location
 out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
