@@ -17,18 +17,38 @@ require(mapview)
 library(stars) #necessary for st_rasterize
 require(gridExtra)
 require(raster)
+library(rstudioapi)
 
 ## == IMPORT GEODATA == ##
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+prec_map_relative <- config$global$precipitation
+
+# Construct the full path to the NDVI map directory based on the config file location
+buildings_map_dir <- normalizePath(file.path(parent_directory, prec_map_relative), winslash = "/")
+print(buildings_map_dir)
 
 #import csv of monthly precipitation (2017)
 #import measurement stations of "precipitation"
-precipitation <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Precipitation/MonthlyPrecipitation.csv', sep = ',')
+precipitation <- read.csv(buildings_map_dir, sep = ',')
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
 ## == DATA PROCESSING == ##
 
 #drop irrelevant columns (non-nummeric)
 precipitation_processed <- subset(precipitation, select = -c(STATION, NAME, PRCP_ATTRIBUTES))
-
 
 ## == Create while loop with intention of creating precipitation tif per month == ##
 
@@ -67,16 +87,16 @@ while(i <= length(months)){
   test <- precipitation_month_3035[-dataset,]
   
   #export option
-  #write.csv(train, paste0('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/precipitation/csv/train', month_abr[[j]], '.csv'),col.names = TRUE)
-  #write.csv(test, paste0('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/precipitation/csv/test', month_abr[[j]], '.csv'),col.names = TRUE)
+  #write.csv(train, paste0(out_location_dir, month_abr[[j]], '.csv'),col.names = TRUE)
+  #write.csv(test, paste0(out_location_dir, month_abr[[j]], '.csv'),col.names = TRUE)
   
   #spatial data option
   train_sf <- st_as_sf(train)
   test_sf <- st_as_sf(test)
   layer_train  <- paste0('train_', month_abr[[j]], '.shp')
-  #sf::st_write(train_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/precipitation/Evaluation", layer=layer_train, driver = "ESRI Shapefile")
+  #sf::st_write(train_sf, dsn=out_location_dir, layer=layer_train, driver = "ESRI Shapefile")
   layer_test  <- paste0('test_', month_abr[[j]], '.shp')
-  #sf::st_write(test_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/precipitation/Evaluation", layer=layer_test, driver = "ESRI Shapefile")
+  #sf::st_write(test_sf, dsn=out_location_dir, layer=layer_test, driver = "ESRI Shapefile")
 
   #define area of interest
   bbox <- st_bbox(train)
@@ -135,7 +155,7 @@ while(i <= length(months)){
   ## CONVERT TO RASTER
   rasterDF <- raster(lz.ok)
   #export option
-  writeRaster(rasterDF, paste0('C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/', month_abr[[j]], '.tif'))
+  writeRaster(rasterDF, paste0(out_location_dir, month_abr[[j]], '.tif'))
   
   #store variable in loop
   list_months[[paste0('OKprecipitation', month_abr[[j]])]] <- lz.ok
@@ -150,7 +170,7 @@ while(i <= length(months)){
 
   #export option
   layer  <- paste0('evaluation_', month_abr[[j]], '.shp')
-  #sf::st_write(Evaluation, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/precipitation/Evaluation", layer=layer, driver = "ESRI Shapefile")
+  #sf::st_write(Evaluation, dsn=out_location_dir, layer=layer, driver = "ESRI Shapefile")
   
   #indicate process
   print("next month")
