@@ -34,12 +34,11 @@ parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 prec_map_relative <- config$global$precipitation
 
 # Construct the full path to the NDVI map directory based on the config file location
-buildings_map_dir <- normalizePath(file.path(parent_directory, prec_map_relative), winslash = "/")
-print(buildings_map_dir)
+precipitation_map_dir <- normalizePath(file.path(parent_directory, prec_map_relative), winslash = "/")
 
 #import csv of monthly precipitation (2017)
 #import measurement stations of "precipitation"
-precipitation <- read.csv(buildings_map_dir, sep = ',')
+precipitation <- read.csv(precipitation, sep = ',')
 
 ## == define output path == ##
 out_location <- config$out_location

@@ -4,5 +4,9 @@ global:
   no2: data/input/GlobalModelData/InitialGlobalDataset.csv
   ndvi_map: data/input/NDVI
   precipitation: data/input/Precipitation/MonthlyPrecipitation.csv
+  traffic_volume_germany: data/input/Traffic/TrafficVolume_RoadsGermany.shp
+  traffic_volume_netherlands: data/input/Traffic/TrafficVolume_RoadsNL.shp
+  germany: data/input/SpatialPlaces/Germany.shp
+  netherlands: data/input/SpatialPlaces/NL.shp
 
 out_location: data/output/

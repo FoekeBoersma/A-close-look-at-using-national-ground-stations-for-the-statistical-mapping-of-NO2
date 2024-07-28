@@ -20,22 +20,43 @@ library(geosphere) #geosphere::dist2Line
 library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
+library(rstudioapi)
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+traffic_germany_relative <- config$global$traffic_volume_germany
+ 
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
-roads_Germany <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_RoadsGermany.shp')
+roads_Germany <- normalizePath(file.path(parent_directory, traffic_germany_relative), winslash = "/")
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
-ms_stations <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/GlobalModelData/InitialGlobalDataset.csv', sep= ";")
+no2_dataset <- config$global$no2
+no2_map_dir <- normalizePath(file.path(parent_directory, no2_dataset ), winslash = "/")
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
 #create spatial dataframe from no2 measurement stations dataset
-ms_stations_sf <- st_as_sf(ms_stations, coords = c("Longitude", "Latitude"))
+ms_stations_sf <- st_as_sf(no2_map_dir, coords = c("Longitude", "Latitude"))
 ms_stations_sf$M_id <- seq(1, nrow(ms_stations_sf)) #import for later data processing (@ ## == CALCULATE AVERAGE TRAFFIC FOR EACH BUFFER == ##)
 # assign coordinate system
 st_crs(ms_stations_sf) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
 
 #filter to only German NO2 stations
 #import Germany shapefile
-germany <- read_sf('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/SpatialPlaces/Germany.shp')
+germany <- config$global$germany
+germany_location_dir <- normalizePath(file.path(parent_directory, germany ), winslash = "/")
+germany <- read_sf(germany_location_dir)
 plot(germany)
 #select measurement stations that are only in Germany
 ms_stations_ger_alldata <- ms_stations_sf[germany,]
@@ -72,7 +93,7 @@ for(i in bufs){
   #export option
   layerGermany <- paste("bufGermany", i, "m", sep = "")
   print(layerGermany)
-  #sf::st_write(buf_i, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s',layer=layerGermany, driver = "ESRI Shapefile")
+  #sf::st_write(buf_i, dsn=out_location_dir,layer=layerGermany, driver = "ESRI Shapefile")
   
 }
 
@@ -105,7 +126,7 @@ while(j <= length(buffer_vars)){
   layer_clipGermany  <- paste0('clipGermany', bufs[[i]], '.shp')
   print(layer_clipGermany)
   
-  #sf::st_write(clipGermany, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_clipGermany, driver = "ESRI Shapefile")
+  #sf::st_write(clipGermany, dsn=out_location_dir, layer=layer_clipGermany, driver = "ESRI Shapefile")
   
   ## == SELECT ROADS WITHIN BUFFER X == ##
   intersect_j <- st_intersection(clip, buffer_vars[[j]],  sp = TRUE)
@@ -117,7 +138,7 @@ while(j <= length(buffer_vars)){
   layer_intersectGermany  <- paste0('interGermany', bufs[[i]], '.shp')
   print(layer_intersectGermany)
   #export option
-  #sf::st_write(intersect_j, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_intersectGermany, driver = "ESRI Shapefile")
+  #sf::st_write(intersect_j, dsn=out_location_dir, layer=layer_intersectGermany, driver = "ESRI Shapefile")
   
   #dissolve by common ID - polygons with similar buffer ID will be merged
   #the area of these polygons will be aggregated via "SUM"
@@ -129,7 +150,7 @@ while(j <= length(buffer_vars)){
   print(layer_dissolveGermany)
   
   #export option
-  #sf::st_write(dissolve, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_dissolveGermany, driver = "ESRI Shapefile")
+  #sf::st_write(dissolve, dsn=out_location_dir, layer=layer_dissolveGermany, driver = "ESRI Shapefile")
   
   #merge datasets via left_join
   mergeGermany = left_join(measurement_stations, dissolve, by = "M_id")
@@ -141,7 +162,7 @@ while(j <= length(buffer_vars)){
   print(layer_mergeGermany)
   
   #export option
-  #sf::st_write(mergeGermany, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_mergeGermany, driver = "ESRI Shapefile")
+  #sf::st_write(mergeGermany, dsn=out_location_dir, layer=layer_mergeGermany, driver = "ESRI Shapefile")
   
   #next buffer dataset
   j = j+1
@@ -166,23 +187,32 @@ ms_traffic_per_buf <- ms_traffic_per_buf %>% dplyr::select(M_id, trafBuf25, traf
 #rename variable
 traffic_NO2_Germany <- ms_traffic_per_buf
 
-#sf::st_write(traffic_NO2_Germany, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer='traffic_NO2_Germany', driver = "ESRI Shapefile")
+#sf::st_write(traffic_NO2_Germany, dsn=out_location_dir, layer='traffic_NO2_Germany', driver = "ESRI Shapefile")
 
 # ## == ASSIGN TRAFFIC VALUES PER BUFFER TO MEASUREMENT STATIONS (ALL DATA) == ##
 # ms_stations_alldata <- left_join(ms_stations_ger_alldata, ms_traffic_per_buf, by = "M_id", sp=T)
 # ms_stations_alldata$geometry.y <- NULL
 # view(ms_stations_alldata)
 # 
-# sf::st_write(ms_stations_alldata, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer='traffic_Germany', driver = "ESRI Shapefile")
+# sf::st_write(ms_stations_alldata, dsn=out_location_dir, layer='traffic_Germany', driver = "ESRI Shapefile")
 
 ### === NETHERLANDS === ###
 
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
-roads_NL <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_RoadsNL.shp')
+
+traffic_netherlands_relative <- config$global$traffic_volume_netherlands
+ 
+## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
+roads_NL_dir <- normalizePath(file.path(parent_directory, traffic_germany_relative), winslash = "/")
+
+roads_NL <- readOGR(roads_NL_dir )
 
 #filter to only Dutch NO2 stations
 #import Netherlands shapefile
-NL <- read_sf('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/SpatialPlaces/NL.shp')
+
+netherlands <- config$global$netherlands
+netherlands_location_dir <- normalizePath(file.path(parent_directory, netherlands ), winslash = "/")
+NL <- read_sf(netherlands_location_dir)
 #apply crs
 NL <- st_transform(NL, crs = st_crs(ms_stations_sf))
 ms_stations_nl_alldata <- ms_stations_sf[NL,]
@@ -193,7 +223,7 @@ ms_stations_nl_alldata <- ms_stations_sf[NL,]
 ms_stations_nl<- ms_stations_nl_alldata %>% dplyr::select(geometry,M_id)
 
 # #export option
-# sf::st_write(ms_stations_nl, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s',layer='ms_stations_nl', driver = "ESRI Shapefile")
+# sf::st_write(ms_stations_nl, dsn=out_location_dir,layer='ms_stations_nl', driver = "ESRI Shapefile")
 
 ## Project data into a planar coordinate system 
 ms_stations_utm <- st_transform(ms_stations_nl, crs=3035)
@@ -221,7 +251,7 @@ for(i in bufs){
   print(layerNL)
  
   #export option
-  #sf::st_write(buf_i, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s",layer=layerNL, driver = "ESRI Shapefile")
+  #sf::st_write(buf_i, dsn=out_location_dir,layer=layerNL, driver = "ESRI Shapefile")
   
 }
 
@@ -253,7 +283,7 @@ while(j <= length(buffer_vars)){
   layer_clipNL  <- paste0('clipNL', bufs[[i]], '.shp')
   print(layer_clipNL)
   #export option
-  #sf::st_write(clip, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_clipNL, driver = "ESRI Shapefile")
+  #sf::st_write(clip, dsn=out_location_dir, layer=layer_clipNL, driver = "ESRI Shapefile")
   ## == SELECT ROADS WITHIN BUFFER X == ##
   intersect_j <- st_intersection(clipNL, buffer_vars[[j]],  sp = TRUE)
   #compute length (m) for each polygon in dataset
@@ -264,7 +294,7 @@ while(j <= length(buffer_vars)){
   layer_intersectNL  <- paste0('interNL', bufs[[i]], '.shp')
   print(layer_intersectNL)
   #export option
-  #sf::st_write(intersect_j, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_intersectNL, driver = "ESRI Shapefile")
+  #sf::st_write(intersect_j, dsn=out_location_dir, layer=layer_intersectNL, driver = "ESRI Shapefile")
   
   #dissolve by common ID - polygons with similar buffer ID will be merged
   #the area of these polygons will be aggregated via "SUM"
@@ -278,7 +308,7 @@ while(j <= length(buffer_vars)){
   print(layer_dissolveNL)
   
   #export option
-  #sf::st_write(dissolve, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_dissolveNL, driver = "ESRI Shapefile")
+  #sf::st_write(dissolve, dsn=out_location_dir, layer=layer_dissolveNL, driver = "ESRI Shapefile")
   
   #merge datasets via left_join
   mergeNL = left_join(measurement_stations, dissolve, by = "M_id")
@@ -290,7 +320,7 @@ while(j <= length(buffer_vars)){
   print(layer_mergeNL)
   
   #export option
-  #sf::st_write(merge, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer=layer_mergeNL, driver = "ESRI Shapefile")
+  #sf::st_write(merge, dsn=out_location_dir, layer=layer_mergeNL, driver = "ESRI Shapefile")
   
   #next buffer dataset
   j = j+1
@@ -314,7 +344,7 @@ ms_traffic_per_buf <- ms_traffic_per_buf %>% rename(geometry = geometry.x)
 #rename variable
 traffic_NO2_NL <- ms_traffic_per_buf
 #export option
-#sf::st_write(traffic_NO2_NL, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/toNO2s", layer='traffic_NO2_NL', driver = "ESRI Shapefile")
+#sf::st_write(traffic_NO2_NL, dsn=out_location_dir, layer='traffic_NO2_NL', driver = "ESRI Shapefile")
 
 
 
@@ -329,7 +359,7 @@ st_crs(traffic_NO2_Germany)
 st_crs(traffic_NO2_NL)
 
 # #export option
-sf::st_write(Traffic_StudyArea, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/processed',layer='traffic_NO2_Global', driver = "ESRI Shapefile")
+sf::st_write(Traffic_StudyArea, dsn=out_location_dir,layer='traffic_NO2_Global', driver = "ESRI Shapefile")
 
 
 
