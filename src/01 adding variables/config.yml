@@ -8,5 +8,6 @@ global:
   traffic_volume_netherlands: data/input/Traffic/TrafficVolume_RoadsNL.shp
   germany: data/input/SpatialPlaces/Germany.shp
   netherlands: data/input/SpatialPlaces/NL.shp
+  traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
 
 out_location: data/output/
