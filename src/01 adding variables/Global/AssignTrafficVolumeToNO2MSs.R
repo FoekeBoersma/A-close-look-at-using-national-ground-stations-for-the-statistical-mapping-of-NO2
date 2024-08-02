@@ -34,7 +34,8 @@ config <- yaml.load_file(config_path)
 
 # Use dirname() to get the parent directory
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
-traffic_study_area_relative <- config$global$traffic_volume_study_area
+traffic_study_area <- config$global$traffic_volume_study_area
+traffic_study_area_relative <- normalizePath(file.path(parent_directory, traffic_study_area), winslash = "/")
  
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##

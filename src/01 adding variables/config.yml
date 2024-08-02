@@ -23,5 +23,8 @@ global:
   snelheid_export_overig: data/input/Traffic/intensiteit-snelheid-export-overig.csv
   Telpunten_WGS84: data/input/Traffic/Telpunten_WGS84.shp
 
+local:
+  buildings: data/input/BuildingDensity/polygon_studyArea.shp
+  no2: data/input/LocalModelData/LocalMeasurementStations.csv
 
 out_location: data/output/
