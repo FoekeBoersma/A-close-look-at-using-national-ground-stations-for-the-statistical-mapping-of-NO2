@@ -21,6 +21,8 @@ library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
 
+## == connect with yaml file == ##
+
 #connect to yaml file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
 # Move one level up in the directory
@@ -32,7 +34,7 @@ config <- yaml.load_file(config_path)
 
 # Use dirname() to get the parent directory
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
-traffic_study_ara_relative <- config$global$ traffic_volume_study_area
+traffic_study_area_relative <- config$global$traffic_volume_study_area
  
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
@@ -45,7 +47,7 @@ out_location_dir <- normalizePath(file.path(parent_directory, out_location ), wi
 
 
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
-roads_StudyArea <- normalizePath(file.path(parent_directory, traffic_study_ara_relative), winslash = "/")
+roads_StudyArea <- normalizePath(file.path(parent_directory, traffic_study_area_relative), winslash = "/")
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
 ms_stations <- read.csv(file = no2_map_dir, sep= ";")

@@ -24,6 +24,24 @@ library(sfheaders) #converting to multistring
 ## == DEFINE COORDINATE SYSTEMS == ##
 crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+roads_Germany <- config$global$roads_Germany
+roads_Germany_relative <- normalizePath(file.path(parent_directory, roads_Germany ), winslash = "/")
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
 ### === GERMANY === ###
 
 #import motorways and primary roads in Germany
@@ -33,7 +51,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 #to high uncertainty.
 
 #import motorways and primary roads in Germany
-roads_Germany <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/Motorway_Primary_Germany.shp')
+roads_Germany <- readOGR(roads_Germany_relative)
 
 #make spatial via sf package
 roads_Germany_sf <- st_as_sf(roads_Germany)
@@ -47,15 +65,15 @@ roads_Germany_sf <- st_transform(roads_Germany_sf, crs=crs)
 roads_Germany_3035 <- st_transform(roads_Germany_sf, crs = 3035)
 
 # #optionally, export
-# sf::st_write(roads_Germany_3035, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/roads_Germany.shp', driver = "ESRI Shapefile")
+#sf::st_write(oads_Germany_3035, dsn=out_location_dir, layer=roads_Germany.shp, driver = "ESRI Shapefile")
 
 #decrease dataset size and only keep relevant columns
 roads_Germany_3035 <- roads_Germany_3035 %>% dplyr::select(type, geometry) #type = 'Motorway' or 'Primary'
 
 ## == TRAFFIC DATA == ## (point features)
-
+jawe_relative <- config$global$jawe
 #Germany traffic data (Jawe) - Average daily traffic (Mo-So), All traffic type, measured over 2017.
-Jawe <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Jawe_processed.shp')
+Jawe <- readOGR(jawe_relative)
 
 #convert to sf
 Jawe_sf <- st_as_sf(Jawe, coords = c("long", "lat"))
@@ -63,7 +81,7 @@ Jawe_sf
 Jawe_sf <- Jawe_sf %>% rename("AverageHourlyTraffic" = "AvrgHrT")
 
 #export option
-#sf::st_write(spdf, dsn='C:/Users/foeke/OneDrive/Documenten/ArcGIS/Projects/MyProject21/Germany/complete',layer='Jawe_TrafficVolume', driver = "ESRI Shapefile")
+#sf::st_write(spdf, dsn=out_location_dir,layer='Jawe_TrafficVolume', driver = "ESRI Shapefile")
 
 # ## == potentially: fix geometry issues related to road shapefiles == ##
 # 
@@ -118,7 +136,7 @@ for(i in road_types)
   layer_extra_points <- paste('ExtraPointsGermany3035', i, sep = " ") 
   print(layer_extra_points)
   
-  sf::st_write(st_extra_points, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/',layer=layer_extra_points, driver = "ESRI Shapefile")
+  sf::st_write(st_extra_points, dsn=out_location_dir,layer=layer_extra_points, driver = "ESRI Shapefile")
   
   ## == SELECT RELEVANT POINTS PER ROAD TYPE == ##
   
@@ -138,14 +156,14 @@ for(i in road_types)
   print(layer_sf_buffer_roadtype)
   
   
-  sf::st_write(sf_buffer_roadtype, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/', layer = layer_sf_buffer_roadtype, driver = "ESRI Shapefile")
+  sf::st_write(sf_buffer_roadtype, dsn=out_location_dir, layer = layer_sf_buffer_roadtype, driver = "ESRI Shapefile")
   
   Jawe_roadtype <- sf_points_Jawe[sf_buffer_roadtype,] #select points that intersect with specific roadtype
   
   layer_Jawe_roadtype<- paste('Jawe_roadtype', i, sep = " ") 
   print(layer_Jawe_roadtype)
   
-  sf::st_write(Jawe_roadtype, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/',layer=layer_Jawe_roadtype, driver = "ESRI Shapefile")
+  sf::st_write(Jawe_roadtype, dsn=out_location_dir,layer=layer_Jawe_roadtype, driver = "ESRI Shapefile")
 
   ## == ASSIGN TRAFFIC COUNTING STATION VALUES TO EXTRA CREATED POINTS == ##
   
@@ -160,7 +178,7 @@ for(i in road_types)
   
   layer_trafficvalues_points_roadtype<- paste('trafficvalues_points_roadtype', i, sep = " ") 
   print(layer_trafficvalues_points_roadtype)
-  sf::st_write(trafficvalues_points_roadtype, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/',layer=layer_trafficvalues_points_roadtype, driver = "ESRI Shapefile")
+  sf::st_write(trafficvalues_points_roadtype, dsn=out_location_dir,layer=layer_trafficvalues_points_roadtype, driver = "ESRI Shapefile")
   
   ## == ASSIGN POINT VALUES TO LINES (ROADS) == ##
   
@@ -182,10 +200,9 @@ for(i in road_types)
   layer_trafficVolumeGermany_roadtype <- paste('TrafficVolumeGermany3035', i, sep = " ")
   print(layer_trafficVolumeGermany_roadtype)
   
-  sf::st_write(linepoints_join, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/',layer=layer_trafficVolumeGermany_roadtype, driver = "ESRI Shapefile")
+  sf::st_write(linepoints_join, dsn=out_location_dir,layer=layer_trafficVolumeGermany_roadtype, driver = "ESRI Shapefile")
   
 }
-
 
 
 summary(result_variables) #examine if assigning to list went well.
@@ -194,23 +211,50 @@ summary(result_variables) #examine if assigning to list went well.
 TrafficVolume_RoadsGermany <- rbind(result_variables[[1]], result_variables[[2]])
 
 #export option
-sf::st_write(TrafficVolume_RoadsGermany, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/',layer='TrafficVolume_RoadsGermany', driver = "ESRI Shapefile")
+sf::st_write(TrafficVolume_RoadsGermany, dsn=out_location_dir,layer='TrafficVolume_RoadsGermany', driver = "ESRI Shapefile")
 
 
 ### === NETHERLANDS === ###
 
 ## == IMPORT ROADS NETHERLANDS (MOTORWAY AND PRIMARY) == ##
-roadsNL <- readOGR(dsn = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/motorway_primary_NL.shp")
+
+motorway_primary_NL <- config$global$motorway_primary_NL
+motorway_primary_NL_relative <- normalizePath(file.path(parent_directory, motorway_primary_NL ), winslash = "/")
+
+
+roadsNL <- readOGR(dsn = motorway_primary_NL_relative)
 
 ## == IMPORT TRAFFIC COUNTING STATIONS == ##
 ## == A: VALUES 
-tc_stations_RotDH <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-RotterdamDenHaag.csv', sep= ",")
-tc_stations_zuid <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-zuid.csv', sep = ',')
-tc_stations_noord <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-noord.csv', sep = ',')
-tc_stations_AmsWest <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-Amsterdam-West.csv', sep = ',')
-tc_stations_AmsOost <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-Amsterdam-Oost.csv', sep = ',')
-tc_stations_AmsNoord <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-Amsterdam-Noord.csv', sep = ',')
-tc_stations_overig <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/intensiteit-snelheid-export-overig.csv', sep = ',')
+snelheid_export_RotterdamDenHaag <- config$global$snelheid_export_RotterdamDenHaag
+snelheid_export_RotterdamDenHaag_relative <- normalizePath(file.path(parent_directory,snelheid_export_RotterdamDenHaag), winslash = "/")
+tc_stations_RotDH <- read.csv(file = snelheid_export_RotterdamDenHaag_relative, sep= ",")
+
+
+snelheid_export_zuid <- config$global$snelheid_export_zuid
+snelheid_export_zuid_relative <- normalizePath(file.path(parent_directory, snelheid_export_zuid), winslash = "/")
+tc_stations_zuid <- read.csv(file = snelheid_export_zuid_relative, sep = ',')
+
+snelheid_export_noord <- config$global$snelheid_export_noord
+snelheid_export_noord_relative <- normalizePath(file.path(parent_directory, snelheid_export_noord), winslash = "/")
+tc_stations_noord <- read.csv(file = snelheid_export_noord_relative, sep = ',')
+
+snelheid_export_AmsterdamWest <- config$global$snelheid_export_AmsterdamWest
+snelheid_export_AmsterdamWest_relative <- normalizePath(file.path(parent_directory, snelheid_export_AmsterdamWest ), winslash = "/")
+tc_stations_AmsWest <- read.csv(file = snelheid_export_AmsterdamWest_relative, sep = ',')
+
+snelheid_export_AmsterdamOost <- config$global$snelheid_export_AmsterdamOost
+snelheid_export_AmsterdamOost_relative <- normalizePath(file.path(parent_directory, snelheid_export_AmsterdamOost), winslash = "/")
+tc_stations_AmsOost <- read.csv(file = snelheid_export_AmsterdamOost_relative, sep = ',')
+
+
+snelheid_export_AmsterdamNoord <- config$global$snelheid_export_AmsterdamNoord
+snelheid_export_AmsterdamNoord_relative <- normalizePath(file.path(parent_directory, snelheid_export_AmsterdamNoord), winslash = "/")
+tc_stations_AmsNoord <- read.csv(file = snelheid_export_AmsterdamNoord_relative, sep = ',')
+
+snelheid_export_overig <- config$global$snelheid_export_overig
+snelheid_export_overig_relative <- normalizePath(file.path(parent_directory, snelheid_export_overig), winslash = "/")
+tc_stations_overig <- read.csv(file = snelheid_export_overig_relative, sep = ',')
 
 #combine the different road parts of the Netherlands into one dataset via row bind.
 traffic_counting_stations <- rbind(tc_stations_RotDH, tc_stations_zuid, tc_stations_noord,
@@ -218,7 +262,7 @@ traffic_counting_stations <- rbind(tc_stations_RotDH, tc_stations_zuid, tc_stati
                      tc_stations_AmsNoord, tc_stations_overig)
 
 #export option
-write.csv(traffic_counting_stations,"C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample/tc_stations.csv")
+write.csv(traffic_counting_stations,out_location_dir+"tc_stations.csv")
 
 #filter to "anyVehicle"
 tc_stations_any_vehicle <- traffic_counting_stations[traffic_counting_stations$voertuigcategorie == 'anyVehicle',]
@@ -233,7 +277,9 @@ tc_stations_avght <- tc_stations_any_vehicle_merged %>%
 
 
 ## == B: COORDINATES COUNTING STATIONS
-location_tc_stations <- readOGR(dsn = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/Telpunten_WGS84.shp")
+Telpunten_WGS84<- config$global$Telpunten_WGS84
+Telpunten_WGS84_relative <- normalizePath(file.path(parent_directory, Telpunten_WGS84), winslash = "/")
+location_tc_stations <- readOGR(dsn = Telpunten_WGS84_relative)
 location_tc_stations <- as.data.frame(location_tc_stations)
 location_tc_stations <- location_tc_stations %>% rename(id_meetlocatie = dgl_loc)
 
@@ -241,7 +287,7 @@ location_tc_stations <- location_tc_stations %>% rename(id_meetlocatie = dgl_loc
 tc_stations_xy <- st_as_sf(location_tc_stations, coords=c("POINT_X", "POINT_Y"))
 st_crs(tc_stations_xy) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
 
-sf::st_write(tc_stations_xy, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample", layer="telpunten", driver = "ESRI Shapefile")
+sf::st_write(tc_stations_xy, dsn=out_location_dir, layer="telpunten", driver = "ESRI Shapefile")
 
 ## == combine traffic data with coords == ##
 
@@ -252,9 +298,7 @@ tc_stations_xy <- st_as_sf(tc_stations_xy, coords=c("POINT_X", "POINT_Y"))
 st_crs(tc_stations_xy) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
 
 #export option
-sf::st_write(tc_stations_xy, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample", layer="tc_stations_NL", driver = "ESRI Shapefile")
-#import option
-#tc_stations_xy <- readOGR(dsn = "C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample/tc_stations_NL.shp")
+sf::st_write(tc_stations_xy, dsn=out_location_dir, layer="tc_stations_NL", driver = "ESRI Shapefile")
 
 tc_stations_xy <- st_as_sf(tc_stations_xy, coords = c("crds_x1", "crds_x2"))
 
@@ -290,7 +334,7 @@ for(i in road_types)
   layer_extra_points <- paste('ExtraPointsNetherlands3035',  i, sep = " ")
   print(layer_extra_points)
   
-  sf::st_write(st_extra_points, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample',layer=layer_extra_points, driver = "ESRI Shapefile")
+  sf::st_write(st_extra_points, dsn=out_location_dir,layer=layer_extra_points, driver = "ESRI Shapefile")
   
   ## == SELECT RELEVANT POINTS PER ROAD TYPE - OPTION A (VIA SPATIAL SELECTION) == ##
   
@@ -340,7 +384,7 @@ for(i in road_types)
   layer_trafficVolumeNetherlands_roadtype <- paste('TrafficVolumeNetherlands3035', i, sep = " ")
   print(layer_trafficVolumeNetherlands_roadtype)
   
-  sf::st_write(linepoints_join, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/sample',layer=layer_trafficVolumeNetherlands_roadtype, driver = "ESRI Shapefile")
+  sf::st_write(linepoints_join, dsn=out_location_dir,layer=layer_trafficVolumeNetherlands_roadtype, driver = "ESRI Shapefile")
   
   
 }
@@ -349,7 +393,7 @@ for(i in road_types)
 TrafficVolume_RoadsNL <- rbind(result_variables[[1]], result_variables[[2]])
 
 #export option
-sf::st_write(TrafficVolume_RoadsNL, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic',layer='TrafficVolume_RoadsNL', driver = "ESRI Shapefile")
+sf::st_write(TrafficVolume_RoadsNL, dsn=out_location_dir,layer='TrafficVolume_RoadsNL', driver = "ESRI Shapefile")
 
 ## == Combine Traffic Volume on German roads with Traffic Volume on Dutch Roads via merge operation == ##
 TrafficVolume_RoadsNL
@@ -362,4 +406,4 @@ TrafficVolume_StudyArea = rbind(TrafficVolume_RoadsGermany, TrafficVolume_RoadsN
 #make spatial again since geometry info is still apparent
 TrafficVolume_StudyArea <- st_as_sf(TrafficVolume_StudyArea) 
 #export option
-sf::st_write(TrafficVolume_StudyArea, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic',layer='TrafficVolume_StudyArea', driver = "ESRI Shapefile")
+sf::st_write(TrafficVolume_StudyArea, dsn=out_location_dir,layer='TrafficVolume_StudyArea', driver = "ESRI Shapefile")
