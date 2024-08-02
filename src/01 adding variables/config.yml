@@ -11,6 +11,7 @@ global:
   traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
   roads_Germany: data/input/Traffic/Motorway_Primary_Germany.shp
   jawe: data/input/Traffic/Jawe_processed.shp
+  jawe2017: data/input/Traffic/Jawe2017.csv'
   motorway_primary_NL: data/input/Traffic/motorway_primary_NL.shp
 
   snelheid_export_RotterdamDenHaag: data/input/Traffic/intensiteit-snelheid-export-RotterdamDenHaag.csv
