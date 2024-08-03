@@ -27,4 +27,4 @@ local:
   buildings: data/input/BuildingDensity/polygon_studyArea.shp
   no2: data/input/LocalModelData/LocalMeasurementStations.csv
 
-out_location: data/output/
+out_location: data/output/01 adding variables/
