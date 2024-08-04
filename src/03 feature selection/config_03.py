@@ -4,5 +4,5 @@ input_dataset = {
 }
 
 output = {
-    "output_map": "/data/output/07 evaluating"
+    "output_map": "/data/output/03 feature selection"
 }
