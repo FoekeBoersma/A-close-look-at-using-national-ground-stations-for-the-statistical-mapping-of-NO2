@@ -21,11 +21,33 @@ library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config_02.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+## == define output path == ##
+out_location <- config_02$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
+#IMPORT GEODATA
+
+## == IMPORT NO2 MEASUREMENT STATIONS == ##
+no2_dataset <- config_02$local$no2
+no2_map_dir <- normalizePath(file.path(parent_directory, no2_dataset ), winslash = "/")
+
 ## == INITIAL DATASET == ## - LOCAL
 
 #import initial dataset
 #import csv (no2 measurement station data)
-ms_stations <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/LocalMeasurementStations.csv', sep= ",")
+ms_stations <- read.csv(file = no2_map_dir , sep= ",")
 
 #filter to only relevant columns
 ms_stations <- ms_stations %>% dplyr::select(Lopend_gemiddelde, long, lat)
@@ -35,7 +57,9 @@ ms_stations <- ms_stations %>% dplyr::select(Lopend_gemiddelde, long, lat)
 #import precipitation data
 #first import all files in a single folder as a list 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Precipitation/TIFS") #TIFS are results of script "AssignPrecipitationToMSs.R"
+prec_tif_dir <- config_02$global$precipitation_tifs
+prec_tif_map <- normalizePath(file.path(parent_directory, prec_tif_dir ), winslash = "/")
+setwd(prec_tif_map ) #TIFS are results of script "AssignPrecipitationToMSs.R"
 
 rastlist_precipitation <- list.files(getwd(), pattern='.tif$', all.files=TRUE, full.names=FALSE)
 for(i in rastlist_precipitation) { assign(unlist(strsplit(i, "[.]"))[1], raster(i)) }
@@ -87,7 +111,7 @@ prec_per_month <- ms_precmonths %>% reduce(full_join, by='M_id')
 prec_per_month <- prec_per_month %>% dplyr::select(M_id, jan, feb, mar, apr, may, jun, jul, aug, oct, sep, oct, nov, dec, long.y, lat.y)
 
 #Export option
-#sf::st_write(prec_per_month, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/ComposingLocalDataset", layer='prec_per_month', driver = "ESRI Shapefile")
+#sf::st_write(prec_per_month, dsn=out_location_dir, layer='prec_per_month', driver = "ESRI Shapefile")
 
 #couple to initial dataset
 ms_precipitation <- left_join(ms_stations_sf, prec_per_month, by = "M_id")
@@ -96,7 +120,9 @@ print(ms_precipitation)
 ## == BUILDING DENSITY == ##
 
 #import building density data
-buildingdensity_ms <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/BuildingDensity/processed/BldDen_ms_StudyArea_Local.shp') #via "Assigning BuildingDensity to NO2MSs.R"
+processed_building_dataset <- config_02$local$building_processed
+processed_building_dataset_dir <- normalizePath(file.path(parent_directory, processed_building_dataset ), winslash = "/")
+buildingdensity_ms <- readOGR(processed_building_dataset_dir)
 #make spatial
 buildingdensity_ms <- st_as_sf(buildingdensity_ms)
 
@@ -123,12 +149,14 @@ ms_prec_bd <- subset(ms_prec_bd, select = -c(long.y, lat.y, geometry) )
 
 
 #Export option
-#sf::st_write(ms_prec_bd, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/ComposingLocalDataset", layer='ms_prec_bd', driver = "ESRI Shapefile")
+#sf::st_write(ms_prec_bd, dsn=out_location_dir, layer='ms_prec_bd', driver = "ESRI Shapefile")
 
 ## == NDVI == ##
 
-#import NDVI data
-NDVI_ms <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/NDVI/processed/ms_NDVI_local.shp') #via "Assigning NDVI to NO2MSs.R"
+#import ndvi data
+processed_ndvi_dataset <- config_02$local$ndvi_processed
+processed_ndvi_dataset_dir <- normalizePath(file.path(parent_directory, processed_ndvi_dataset ), winslash = "/")
+NDVI_ms <- readOGR(processed_ndvi_dataset_dir ) #via AssignNDVIToNO2MSs.R
 
 #make spatial
 NDVI_ms <- st_as_sf(NDVI_ms)
@@ -144,14 +172,16 @@ ms_prec_bd_ndvi <- subset(ms_prec_bd_ndvi, select = -c(coords_x1, coords_x2, M_i
 
 #export option
 # #shapefile
-# sf::st_write(ms_prec_bd_ndvi, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/ComposingLocalDataset", layer='ms_prec_bd_ndvi', driver = "ESRI Shapefile")
+# sf::st_write(ms_prec_bd_ndvi, dsn=out_location_dir, layer='ms_prec_bd_ndvi', driver = "ESRI Shapefile")
 
 
 ## == TRAFFIC VOLUME == ##
 
 
 #import traffic volume data
-trafficvolume_ms <- readOGR('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForModelling/LocalModels/TrafficLocal/traffic_NO2_Local.shp') #via "Assigning TrafficVolume to NO2MSs.R"
+processed_traffic_dataset <- config_02$local$traffic_processed
+processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/")
+trafficvolume_ms <- readOGR(processed_traffic_dataset_dir) #via "Assigning TrafficVolume to NO2MSs.R"
 #make spatial
 trafficvolume_ms <- st_as_sf(trafficvolume_ms)
 trafficvolume_ms <- st_transform(trafficvolume_ms, crs=st_crs(ms_prec_bd_ndvi))
@@ -167,9 +197,9 @@ colnames(ms_prec_bd_ndvi_traf)
 
 #export options
 #shapefile
-# sf::st_write(ms_prec_bd_ndvi_traf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/ComposingLocalDataset", layer='ms_prec_bd_ndvi_traf', driver = "ESRI Shapefile")
+# sf::st_write(ms_prec_bd_ndvi_traf, dsn=out_location_dir, layer='ms_prec_bd_ndvi_traf', driver = "ESRI Shapefile")
 # #csv
-# write.csv(ms_prec_bd_ndvi_traf, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForModelling/ms_prec_bd_ndvi_traf.csv',col.names = TRUE)
+# write.csv(ms_prec_bd_ndvi_traf, out_location_dir + 'ms_prec_bd_ndvi_traf.csv',col.names = TRUE)
 
 ## == import geodata (5 tifs) == ##
 
@@ -284,10 +314,10 @@ MS_Amsterdam_AllPredictors <- st_transform(MS_Amsterdam_AllPredictors, crs=3035)
 
 #export options
 #shapefile
-sf::st_write(MS_Amsterdam_AllPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData", layer='ModellingDataset-Local', driver = "ESRI Shapefile")
+sf::st_write(MS_Amsterdam_AllPredictors, dsn=out_location_dir, layer='ModellingDataset-Local', driver = "ESRI Shapefile")
 #for csv, spatial data is not necessary
 MS_Amsterdam_AllPredictors<- as.data.frame(MS_Amsterdam_AllPredictors)
 MS_Amsterdam_AllPredictors <- dplyr::select(MS_Amsterdam_AllPredictors, -c(M_id, geometry)) #remove geometry column
 MS_Amsterdam_AllPredictors
 #csv
-write.csv(MS_Amsterdam_AllPredictors, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv',col.names = TRUE)
+write.csv(MS_Amsterdam_AllPredictors, out_location_dir + 'ModellingDataset-Local.csv',col.names = TRUE)

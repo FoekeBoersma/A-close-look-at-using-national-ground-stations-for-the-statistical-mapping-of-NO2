@@ -10,21 +10,47 @@ library(leaflet) #mapping in OSM
 library(terra) #rasterize
 library(stars) #necessary for st_rasterize
 
-## == import building density dataset == ##
+#crs used: 3035
+#CRS 3035, also known as the Coordinate Reference System (CRS) with EPSG code 3035, is a specific projection used for mapping and spatial data analysis. 
+#It is designed for use in Europe and is based on the Lambert Azimuthal Equal Area projection.
+
+## == connect with yaml file == ##
+
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+buildings <- config$local$buildings
+buildings_relative <- normalizePath(file.path(parent_directory, buildings), winslash = "/")
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
+#IMPORT GEODATA
 
 #import shapefile of buildingsNL 
-buildings_3035 <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/BuildingDensity/polygonbuilding_studyArea.shp')
+buildings <- readOGR(buildings_relative)
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
-NO2_stations <- read.csv(file = 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/GlobalModelData/InitialGlobalDataset.csv', sep= ";")
+no2_dataset <- config$local$no2
+no2_map_dir <- normalizePath(file.path(parent_directory, no2_dataset ), winslash = "/")
+NO2_stations <- read.csv(file = no2_map_dir, sep= ",")
 
 #create spatial dataframe from no2 measurement stations dataset
-NO2_stations_sf <- st_as_sf(NO2_stations, coords = c("Longitude", "Latitude"))
-#assign ooordinate reference system (crs)
+NO2_stations_sf <- st_as_sf(NO2_stations, coords = c("long", "lat"))
+
 st_crs(NO2_stations_sf) <- "+proj=longlat +datum=WGS84 +no_defs +type=crs"
 
-NO2_stations_sf$M_id <- seq(1, 482) #assign unique identifier which will be used for coupling data later in the process
-NO2_stations_sf<- NO2_stations_sf%>% dplyr::select(FID,geometry,M_id) #filter columns
+NO2_stations_sf$M_id <- seq(1, nrow(NO2_stations_sf)) #assign unique identifier per measurement station - M_id
+NO2_stations_sf<- NO2_stations_sf%>% dplyr::select(geometry,M_id)
 
 ## == CREATE BUFFERS AROUND NO2 MEASUREMENT STATIONS == ##
 ##  First project data into a planar coordinate system 
@@ -44,22 +70,30 @@ for(i in bufs){
   
   #assign coordinate sustem
   buf_i <- st_as_sf(buf_i)
+  st_crs(buf_i, crs=3035)
+  st_crs(buf_i)
+  
   buf_i$area <- st_area(buf_i)
   #store variable in loop
   buffer_vars[[paste("buf", i, "m", sep = "")]] <- buf_i
+  
   #export option
   layer <- paste("buf", i, "m", sep = "")
   print(layer)
   
-  #sf::st_write(buf_i, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/BuildingDensity',layer=layer, driver = "ESRI Shapefile")
+  sf::st_write(buf_i, dsn=out_location_dir,layer=layer, driver = "ESRI Shapefile")
   
 }
 
+
 #examine list where variables of previous loop were stored to.
 summary(buffer_vars)
+# 
+# view(roads_utm)
+st_crs(buffer_vars[[1]])
 
 #transform crs of building dataset to that of buffers to perform spatial calculations
-buildings_3035_sf <-st_as_sf(buildings_3035)
+buildings_sf <-st_as_sf(buildings)
 
 #initialize parameters used in for loop
 j = 1
@@ -76,31 +110,38 @@ measurement_stations <- as.data.frame(NO2_stations_utm)
   
 while(j <= length(buffer_vars)){
   #set to same crs to perform spatial operations
-  buffer_vars[[j]] <- st_transform(buffer_vars[[j]], crs=st_crs(buildings_3035_sf))
+  buffer_vars[[j]] <- st_transform(buffer_vars[[j]], crs=st_crs(buildings_sf))
   #clip - building dataset will be assigned to buffers 
-  clip <- buildings_3035_sf[buffer_vars[[j]],]
+  clip <- buildings_sf[buffer_vars[[j]],]
   layer_clip  <- paste0('clip', bufs[[i]], '.shp')
   print(layer_clip)
   #make clip spatial to export as shapefile
   clip <- st_as_sf(clip)
   #export option
-  #sf::st_write(clip, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/BuildingDensity", layer=layer_clip, driver = "ESRI Shapefile")
+  sf::st_write(clip, dsn=out_location_dir, layer=layer_clip, driver = "ESRI Shapefile")
   
   ## == SELECT ROADS WITHIN BUFFER X == ##
   intersect_j <- st_intersection(clip, buffer_vars[[j]],  sp = TRUE)
+  
   #compute area (m2) for each polygon in dataset
   intersect_j$area <- st_area(intersect_j)
+ 
   layer_intersect  <- paste0('intersect', bufs[[i]], '.shp')
   print(layer_intersect)
-  #sf::st_write(intersect_j, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/BuildingDensity", layer=layer_intersect, driver = "ESRI Shapefile")
+  sf::st_write(intersect_j, dsn=out_location_dir, layer=layer_intersect, driver = "ESRI Shapefile")
   
   #dissolve by common ID - polygons with similar buffer ID will be merged
   #the area of these polygons will be aggregated via "SUM"
-  dissolve <- intersect_j %>% group_by(M_id) %>% summarize(BuiltArea = sum(area))
-  layer_dissolve  <- paste0('dissolve', bufs[[i]], '.shp')
-  #export option
-  #sf::st_write(dissolve, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/BuildingDensity", layer=layer_dissolve, driver = "ESRI Shapefile")
   
+  dissolve <- intersect_j %>% group_by(M_id) %>% summarize(BuiltArea = sum(area))
+  
+  layer_dissolve  <- paste0('dissolve', bufs[[i]], '.shp')
+  print(layer_dissolve)
+  
+  #export option
+  sf::st_write(dissolve, dsn=out_location_dir, layer=layer_dissolve, driver = "ESRI Shapefile")
+  
+
   #merge datasets via left_join
   #make normal dataframe to perform left_join
   bufdata <- as.data.frame(buffer_vars[[j]])
@@ -110,20 +151,29 @@ while(j <= length(buffer_vars)){
   #create new column "building_density" dividing building surface per buffer by
   #total buffer surface
   merge[[paste("BldDen", bufs[[i]], sep="")]] <- merge$BuiltArea/merge$area
+  
   #drop irrelevant columns
-  merge <- subset(merge, select = -c(FID, geometry.y))
+  merge <- subset(merge, select = -c(geometry.y))
+  
   #replace NA by 0 
   merge[is.na(merge)] <- 0
+
   #store variable in loop
   merge_list[[paste0('merge', bufs[[i]])]] <- merge
-  #assign to variable which can be used as input argument for data export
+  
   layer_mer  <- paste0('merge', bufs[[i]], '.shp')
+  print(layer_mer)
+  
   #export option
-  #sf::st_write(merge, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/BuildingDensity", layer=layer_mer, driver = "ESRI Shapefile")
+  sf::st_write(merge, dsn=out_location_dir, layer=layer_mer, driver = "ESRI Shapefile")
+  
   
   #next buffer dataset
   j = j+1
   i = i+1}
+
+#examine
+summary(merge_list)
 
 ## == merge all data frames together and assign to measurement stations == ##
 
@@ -140,4 +190,4 @@ ms_bldden_per_buf <- left_join(measurement_stations, bldden_per_buf, by = "M_id"
 ms_bldden_per_buf <- ms_bldden_per_buf %>% dplyr::select(M_id,  BldDen100, BldDen500, BldDen1000)
 
 #export option
-sf::st_write(ms_bldden_per_buf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/BuildingDensity/processed", layer='BldDen_ms_StudyArea_Global', driver = "ESRI Shapefile")
+sf::st_write(ms_bldden_per_buf, dsn=out_location_dir, layer='BldDen_ms_StudyArea_Local', driver = "ESRI Shapefile")

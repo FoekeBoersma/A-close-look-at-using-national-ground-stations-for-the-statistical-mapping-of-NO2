@@ -1,0 +1,30 @@
+global:
+  base: dirname(current_dir)
+  buildings: data/input/BuildingDensity/polygon_studyArea.shp
+  no2: data/input/GlobalModelData/InitialGlobalDataset.csv
+  ndvi_map: data/input/NDVI
+  precipitation: data/input/Precipitation/MonthlyPrecipitation.csv
+  traffic_volume_germany: data/input/Traffic/TrafficVolume_RoadsGermany.shp
+  traffic_volume_netherlands: data/input/Traffic/TrafficVolume_RoadsNL.shp
+  germany: data/input/SpatialPlaces/Germany.shp
+  netherlands: data/input/SpatialPlaces/NL.shp
+  traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
+  roads_Germany: data/input/Traffic/Motorway_Primary_Germany.shp
+  jawe: data/input/Traffic/Jawe_processed.shp
+  jawe2017: data/input/Traffic/Jawe2017.csv'
+  motorway_primary_NL: data/input/Traffic/motorway_primary_NL.shp
+
+  snelheid_export_RotterdamDenHaag: data/input/Traffic/intensiteit-snelheid-export-RotterdamDenHaag.csv
+  snelheid_export_zuid: data/input/Traffic/intensiteit-snelheid-export-zuid.csv
+  snelheid_export_noord: data/input/Traffic/intensiteit-snelheid-export-noord.csv
+  snelheid_export_AmsterdamWest: data/input/Traffic/intensiteit-snelheid-export-Amsterdam-West.csv
+  snelheid_export_AmsterdamOost: data/input/Traffic/intensiteit-snelheid-export-Amsterdam-Oost.csv
+  snelheid_export_AmsterdamNoord: data/input/Traffic/intensiteit-snelheid-export-Amsterdam-Noord
+  snelheid_export_overig: data/input/Traffic/intensiteit-snelheid-export-overig.csv
+  Telpunten_WGS84: data/input/Traffic/Telpunten_WGS84.shp
+
+local:
+  buildings: data/input/BuildingDensity/polygon_studyArea.shp
+  no2: data/input/LocalModelData/LocalMeasurementStations.csv
+
+out_location: data/output/01 adding variables/

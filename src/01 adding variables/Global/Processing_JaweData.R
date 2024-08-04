@@ -19,10 +19,30 @@ library(gstat)
 library(geosphere) #geosphere::dist2Line
 library(stars) #for st_rasterize
 
+## == connect with yaml file == ##
+
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
 ## == TRAFFIC DATA == ## (point features)
 
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+jawe2017 <- config$global$jawe2017
+jawe2017_relative <- normalizePath(file.path(parent_directory, jawe2017), winslash = "/")
+
 #Germany traffic data
-trafGER <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/Jawe2017.csv', sep = ';')
+trafGER <- read.csv(jawe2017_relative, sep = ';')
 
 #select only relevant columns
 trafGER <- trafGER %>% dplyr::select(Str_Kl, Betriebs_km, DTV_Kfz_MobisSo_Q, DTV_Kfz_W_Q, DTV_Kfz_U_Q, DTV_Kfz_S_Q, DTV_SV_WU_MobisFr_Q,
@@ -32,7 +52,6 @@ trafGER <- trafGER %>% rename(AverageDailyTraffic =  DTV_Kfz_MobisSo_Q,
                               WeekdayTraffic = DTV_Kfz_W_Q,
                               HolidayWeekdayTraffic = DTV_Kfz_U_Q,
 )
-
 
 
 #PROCESSING GEODATA
@@ -92,7 +111,7 @@ Jawe_processed_sf <- st_as_sf(spdf)
 crs(Jawe_processed_sf)
 
 #export to spatial data, this case shapefile. for geopackage, use 'gpkg' after dataname.
-sf::st_write(Jawe_processed_sf, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic',layer='Jawe_processed', driver = "ESRI Shapefile")
+sf::st_write(Jawe_processed_sf, dsn=out_location_dir,layer='Jawe_processed', driver = "ESRI Shapefile")
 
 #csv
-write.csv(Jawe_processed, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Traffic/Jawe_processed.csv')
+write.csv(Jawe_processed, out_location_dir + 'Jawe_processed.csv')

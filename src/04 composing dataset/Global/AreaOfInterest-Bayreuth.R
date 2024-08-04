@@ -20,6 +20,22 @@ library(geosphere) #geosphere::dist2Line
 library(stars) #for st_rasterize
 library(base) #sprintf
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config_04.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+## == define output path == ##
+out_location <- config_04$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
 ## == intialize coordinates - area of interest == ##
 coor_1 = 11.2749
 coor_3 = 11.8729
@@ -42,7 +58,7 @@ proj4string(poly) = CRS("+proj=longlat +datum=WGS84 +no_defs +type=crs")
 
 #export option
 poly_sf <- st_as_sf(poly)
-#sf::st_write(poly_sf, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/polyBayreuth.gpkg', driver = "GPKG")
+#sf::st_write(poly_sf, dsn=out_location_dir+'/polyBayreuth.gpkg', driver = "GPKG")
 
 ## == make grid == ##
 
@@ -52,5 +68,5 @@ poly_3035 <- st_transform(poly_sf, crs=3035)
 grid <- st_make_grid(poly_3035, cellsize=100)
 
 #export option
-sf::st_write(grid, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/grid100Bayreuth.gpkg', driver = "GPKG")
+sf::st_write(grid, dsn=out_location_dir+'/grid100Bayreuth.gpkg', driver = "GPKG")
 

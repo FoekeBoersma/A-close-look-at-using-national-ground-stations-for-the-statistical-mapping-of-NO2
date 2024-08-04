@@ -1,0 +1,15 @@
+global:
+  no2: data/input/GlobalModelData/InitialGlobalDataset.csv
+  precipitation_tifs: data/input/Precipitation/TIFS/
+  building_processed: data/input/BuildingDensity/processed/BldDen_ms_StudyArea_Global.shp
+  ndvi_processed: data/input/NDVI/processed/ms_NDVI_global.shp
+  traffic_processed: data/input/Traffic/processed/traffic_NO2_Global.shp
+
+local:
+  no2: data/input/LocalModelData/LocalMeasurementStations.csv
+  building_processed: data/input/BuildingDensity/processed/BldDen_ms_StudyArea_Local.shp
+  ndvi_processed: data/input/NDVI/processed/ms_NDVI_local.shp
+  traffic_processed: data/input/Traffic/processed/traffic_NO2_Local.shp
+
+out_location:
+  data/output/02 composing initial dataset/
