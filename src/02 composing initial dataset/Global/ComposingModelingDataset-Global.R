@@ -26,7 +26,7 @@ current_dir <- rstudioapi::getActiveDocumentContext()$path
 # Move one level up in the directory
 config_dir <- dirname(dirname(current_dir))
 # Construct the path to the YAML configuration file
-config_path <- file.path(config_dir, "config.yml")
+config_path <- file.path(config_dir, "config_02.yml")
 # Read the YAML configuration file
 config <- yaml.load_file(config_path)
 
