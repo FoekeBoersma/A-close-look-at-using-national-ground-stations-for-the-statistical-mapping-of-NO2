@@ -1,0 +1,6 @@
+local:
+  local_top30: data/input/LocalModelData/dataset_bestMetrics_longlat-Local-top30.csv
+
+out_location:
+  data/output/03 feature selection/
+

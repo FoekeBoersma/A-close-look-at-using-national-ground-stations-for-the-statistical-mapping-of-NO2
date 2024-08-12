@@ -1,79 +1,88 @@
-#necessary libraries
+# Necessary libraries
 library(tidyverse)
 library(caret)
 library(leaps)
+library(yaml)
+library(rstudioapi)
 
-## == import geodata == ##
+# Connect to YAML file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir))
+config_path <- file.path(config_dir, "config_03.yml")
+config_03 <- yaml.load_file(config_path)
 
-local_data_top30 <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/dataset_bestMetrics_longlat-Local-top30.csv', sep=',')
-#deselect irrelevant column(s)
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+# Define output path
+out_location <- config_03$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location), winslash = "/")
+
+# Import geodata
+local_top30_dataset <- config_03$local$local_top30
+local_top30_map_dir <- normalizePath(file.path(parent_directory, local_top30_dataset), winslash = "/")
+local_data_top30 <- read.csv(local_top30_map_dir, sep = ',')
+
+# Deselect irrelevant column(s)
 local_data_top30 <- local_data_top30 %>% dplyr::select(-c(X))
-#replace NA with 0
+
+# Replace NA with 0
 local_data_top30[is.na(local_data_top30)] <- 0
-local_data_top30
 
-## == determine number of features and which features for modelling == ##
-#source:http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/155-best-subsets-regression-essentials-in-r/
-models <- regsubsets(Lopend_gemiddelde~., data = local_data_top30, nvmax = 30,really.big=T)
-summary(models)
-
-#The summary() function returns some metrics - Adjusted R2, Cp and BIC
-#(see Chapter @ref(regression-model-accuracy-metrics)) -
-#allowing us to identify the best overall model, where best is defined as the model that
-#maximize the adjusted R2 and minimize the prediction error (RSS, cp and BIC).
-#The adjusted R2 represents the proportion of variation, in the outcome, that are explained by
-#the variation in predictors values. the higher the adjusted R2, the better the model.
+# Determine number of features and which features for modelling
+models <- regsubsets(Lopend_gemiddelde ~ ., data = local_data_top30, nvmax = 30, really.big = TRUE)
 res.sum <- summary(models)
-data.frame(
-  Adj.R2 = which.max(res.sum$adjr2),
-  CP = which.min(res.sum$cp),
-  BIC = which.min(res.sum$bic)
-)
 
-# K-fold cross-validation
-# id: model id
-# object: regsubsets object
-# data: data used to fit regsubsets
-# outcome: outcome variable
-get_model_formula <- function(id, object, outcome){
-  # get models data
-  models <- summary(object)$which[id,-1]
-  # Get outcome variable
-  #form <- as.formula(object$call[[2]])
-  #outcome <- all.vars(form)[1]
-  # Get model predictors
+# Compute best model IDs based on Adjusted R2, CP, and BIC
+best_adj_r2_id <- which.max(res.sum$adjr2)
+best_cp_id <- which.min(res.sum$cp)
+best_bic_id <- which.min(res.sum$bic)
+
+# Compute cross-validation error for each model
+get_model_formula <- function(id, object, outcome) {
+  models <- summary(object)$which[id, -1]
   predictors <- names(which(models == TRUE))
   predictors <- paste(predictors, collapse = "+")
-  # Build model formula
   as.formula(paste0(outcome, "~", predictors))
 }
-#get_model_formula(), allowing to access easily the formula of the models returned by the function regsubsets()
-get_model_formula(10, models, "Lopend_gemiddelde")
-#get_cv_error(), to get the cross-validation (CV) error for a given model
-get_cv_error <- function(model.formula, data_top30){
+
+get_cv_error <- function(model.formula, data_top30) {
   set.seed(1)
   train.control <- trainControl(method = "cv", number = 10)
-  cv <- train(model.formula, data = local_data_top30, method = "lm",
-              trControl = train.control)
+  cv <- train(model.formula, data = data_top30, method = "lm", trControl = train.control)
   cv$results$RMSE
 }
-#Finally, use the above defined helper functions to compute the prediction error of the
-#different best models returned by the regsubsets() function
-# Compute cross-validation error
+
 model.ids <- 1:30
-cv.errors <-  map(model.ids, get_model_formula, models, "Lopend_gemiddelde") %>%
+cv.errors <- map(model.ids, get_model_formula, models, "Lopend_gemiddelde") %>%
   map(get_cv_error, data = local_data_top30) %>%
   unlist()
-cv.errors 
-# Select the model that minimize the CV error (outputs 9)
-which.min(cv.errors)
 
-#examine which related variables
-coef(models, 9)
+# Identify the best model ID based on minimum cross-validation error
+best_model_id <- which.min(cv.errors)
 
-predicting_dataset <- local_data_top30[, c("Lopend_gemiddelde", "nightlight_450", "nightlight_4950", "population_3000", "road_class_1_5000", "road_class_2_1000", "road_class_2_5000", "road_class_3_100", "road_class_3_300", "trafBuf50", "Longitude", "Latitude")]
-predicting_dataset
+# Display the best model formula
+best_model_formula <- get_model_formula(best_model_id, models, "Lopend_gemiddelde")
+best_model_formula
 
-#csv
-write.csv(predicting_dataset, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/PredictingDataset.csv',col.names = TRUE)
+# Show the coefficients of the best model
+best_model_coefs <- coef(models, best_model_id)
+best_model_coefs
 
+# Identify the top 9 variables by absolute value of coefficients
+top_9_vars <- sort(abs(best_model_coefs[-1]), decreasing = TRUE)[1:9]
+top_9_vars
+
+# Display the sequence of the top 9 variables
+top_9_vars_seq <- names(top_9_vars)
+top_9_vars_seq
+
+# Prepare dataset with the top 9 variables
+predicting_dataset <- local_data_top30[, c("Lopend_gemiddelde", top_9_vars_seq)]
+
+# Write to CSV
+# write.csv(predicting_dataset, file.path(out_location_dir, 'PredictingDataset1.csv'), row.names = FALSE)
+
+# Display the sequence of top 9 variables
+print("sequence")
+print(top_9_vars_seq)
