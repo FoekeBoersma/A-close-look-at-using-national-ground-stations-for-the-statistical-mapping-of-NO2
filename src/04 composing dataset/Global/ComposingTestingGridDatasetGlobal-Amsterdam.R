@@ -11,6 +11,22 @@ library(terra) #rasterize
 library(stars) #necessary for st_rasterize
 library(dplyr)
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config_02.yml")
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+## == define output path == ##
+out_location <- config_02$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
 #IMPORT GEODATA
 
 #import area of interest at 100m resolution
