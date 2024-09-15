@@ -9,7 +9,7 @@ input_dataset = {
 }
 
 output = {
-    "output_map": "/data/output/03 feature selection"
+    "output_map": "/data/output/03 feature selection/"
 }
 
 
