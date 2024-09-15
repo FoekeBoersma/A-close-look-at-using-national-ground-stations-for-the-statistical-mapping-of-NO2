@@ -17,5 +17,7 @@ parameters ={
     'n_estimators_random_forest': 100,
     'random_state': 42,
     'test_size': 0.25,
-    'nfolds': 10
+    'nfolds': 10,
+    'no_best_predictors': 30,
+    'no_predictors_model': 12
 }
