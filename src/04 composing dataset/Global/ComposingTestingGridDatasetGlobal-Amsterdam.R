@@ -11,12 +11,14 @@ library(terra) #rasterize
 library(stars) #necessary for st_rasterize
 library(dplyr)
 
+
 #connect to yaml file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
 # Move one level up in the directory
 config_dir <- dirname(dirname(current_dir))
 # Construct the path to the YAML configuration file
-config_path <- file.path(config_dir, "config_02.yml")
+config_path <- file.path(config_dir, "config_04.yml")
+
 # Read the YAML configuration file
 config <- yaml.load_file(config_path)
 
@@ -30,7 +32,7 @@ out_location_dir <- normalizePath(file.path(parent_directory, out_location ), wi
 #IMPORT GEODATA
 
 #import area of interest at 100m resolution
-grid <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/grid100Amsterdam.shp')
+grid <- readOGR('/TooBigData/grid100Amsterdam.shp')
 
 ## == data processing == ##
 
@@ -52,10 +54,10 @@ print(grid_centroids_3035)
 ## == PREDICTORS 5 (AMSTERDAM) GLOBAL DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/5TIFS", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+rastlist <- list.files(path = "/All scripts - paper/data/5TIFS", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/5TIFS")
+setwd("/All scripts - paper/data/5TIFS")
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -116,7 +118,7 @@ print(centroids_5predictors)
 ## == BUILDING DENSITY == ##
 
 #import DIS, to avoid high computational time and power!
-dis <- readOGR("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/dissolve_BuildingDensity_Amsterdam.gpkg")
+dis <- readOGR("/TooBigData/dissolve_BuildingDensity_Amsterdam.gpkg")
 
 
 dis_BldDen <- as.data.frame(dis)
@@ -152,7 +154,7 @@ mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, BldDen100)
 
 #import traffic data
 
-traffic <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_StudyArea.shp')
+traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp')
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -240,7 +242,7 @@ traffic_bufs <- traffic_per_buf  %>% dplyr::select(cenID, trafBuf25,  trafBuf50)
 ## == NDVI == ##
 
 #put tif files into list 
-cur <- setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/NDVI")
+cur <- setwd("/data/NDVI")
 #create list of all files in defined directory
 a = list.files(cur, pattern='.tif$')
 #examine files in list
@@ -324,12 +326,12 @@ Grid100_GlobalPredictors$FID_1 <- NULL
 
 ## == export options == ##
 #shp - cen
-#sf::st_write(Cen100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns", layer='Cen100_GlobalPredictors-Amsterdam', driver = "ESRI Shapefile")
+#sf::st_write(Cen100_GlobalPredictors, dsn="/TooBigData/SpatialPredictionPatterns", layer='Cen100_GlobalPredictors-Amsterdam', driver = "ESRI Shapefile")
 #shp - grid
-sf::st_write(Grid100_GlobalPredictors, dsn='C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Amsterdam.gpkg', driver = "GPKG")
+sf::st_write(Grid100_GlobalPredictors, dsn='/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Amsterdam.gpkg', driver = "GPKG")
 Cen100_GlobalPredictors_wgs <- as.data.frame(Cen100_GlobalPredictors_wgs)
 Cen100_GlobalPredictors_wgs <- Cen100_GlobalPredictors_wgs %>% dplyr::select(-c('geometry', 'cenID.x', "cenID.y"))
 Cen100_GlobalPredictors_wgs
 
 #csv
-write.csv(Cen100_GlobalPredictors_wgs, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Amsterdam.csv')
+write.csv(Cen100_GlobalPredictors_wgs, '/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Amsterdam.csv')

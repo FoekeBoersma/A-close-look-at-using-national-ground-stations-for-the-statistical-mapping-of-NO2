@@ -14,7 +14,7 @@ library(dplyr)
 ## == IMPORT GEODATA == ##
 
 #import area of interest at 100m resolution
-grid <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/grid100Utrecht.gpkg') #obtained via AreaOfInterest-Utrecht.R
+grid <- readOGR('/TooBigData/grid100Utrecht.gpkg') #obtained via AreaOfInterest-Utrecht.R
 
 ## == data processing == ##
 
@@ -34,10 +34,10 @@ grid_centroids_3035 <- st_transform(grid_centroids_sf, crs=3035)
 ## == PREDICTORS 5 (Utrecht) GLOBAL DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Utrecht/TIFFS/7", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+rastlist <- list.files(path = "/data/Utrecht/TIFFS/7", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Utrecht/TIFFS/7")
+setwd("/data/Utrecht/TIFFS/7")
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -94,7 +94,7 @@ centroids_5predictors <- centroids_5predictors %>% select(-contains("coords"))
 ## == BUILDING DENSITY == ##
 
 #import DIS, to avoid high computational time and power!
-dis <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/dissolve_BuildingDensity_Utrecht.gpkg')
+dis <- readOGR('/TooBigData/dissolve_BuildingDensity_Utrecht.gpkg')
 
 dis_BldDen <- as.data.frame(dis)
 print(dis_BldDen)
@@ -131,7 +131,7 @@ mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, BldDen100)
 
 #import traffic data
 
-traffic <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_StudyArea.shp') #obtained via AssignTrafficVolumeToRoads.R
+traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp') #obtained via AssignTrafficVolumeToRoads.R
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -254,7 +254,7 @@ datasets <- merge(datasets, grid_centroids_3035, by= "cenID")
 #make spatial
 datasets_sf <- st_as_sf(datasets, crs=3035)
 
-#sf::st_write(datasets_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Utrecht/datasets_sf.gpkg", driver = "GPKG")
+#sf::st_write(datasets_sf, dsn="/Utrecht/datasets_sf.gpkg", driver = "GPKG")
 
 ## == spatially join predictors with initial 100m spatial dataframe == ##
 
@@ -291,12 +291,12 @@ Grid100_GlobalPredictors$FID_1 <- NULL
 
 ## == export options == ##
 #shp - centroids
-#sf::st_write(Cen100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Cen100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
+#sf::st_write(Cen100_GlobalPredictors, dsn="/TooBigData/Cen100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
 #shp - grid format
-sf::st_write(Grid100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
+sf::st_write(Grid100_GlobalPredictors, dsn="/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
 
 Cen100_GlobalPredictors_wgs <- as.data.frame(Cen100_GlobalPredictors_wgs)
 Cen100_GlobalPredictors_wgs <- Cen100_GlobalPredictors_wgs %>% dplyr::select(-c('geometry', 'cenID.x', "cenID.y"))
 Cen100_GlobalPredictors_wgs
 #csv
-write.csv(Cen100_GlobalPredictors_wgs, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Utrecht.csv')
+write.csv(Cen100_GlobalPredictors_wgs, '/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Utrecht.csv')
