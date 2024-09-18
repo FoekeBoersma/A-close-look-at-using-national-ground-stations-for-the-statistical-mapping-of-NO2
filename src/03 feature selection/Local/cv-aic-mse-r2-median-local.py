@@ -1,14 +1,15 @@
-#import necessary packages
+#import necessary modules
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 #import necessary modules that are included into the function
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
+from math import log
 import re
 import sys
 import os
 import os.path as path
-from functions import (cvaic)
+
 
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +17,7 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 config_directory = os.path.abspath(os.path.join(current_directory, '..'))
 # Append the directory to sys.path
 sys.path.append(config_directory)
-
+from functions import (cvaic)
 # Try importing the config_03 module
 try:
     import config_03
@@ -24,46 +25,54 @@ except ModuleNotFoundError as e:
     print(f"Error importing module: {e}")
 
 # Access the dataset from the config_03 module
-dataset = config_03.input_dataset['globaldataset']
-output_map = config_03.output['output_map']
-n_estimators = config_03.parameters['n_estimators_random_forest']
+dataset = config_03.input_dataset['localdataset']
+output_map = config_03.output['output_map_local']
+no_best_predictors = config_03.parameters['no_predictors_model_local']
+no_predictors_model = config_03.parameters['no_predictors_model']
 random_state = config_03.parameters['random_state']
 nfolds = config_03.parameters['nfolds']
 test_size = config_03.parameters['test_size']
-no_best_predictors = config_03.parameters['no_best_predictors']
-no_predictors_model = config_03.parameters['no_predictors_model']
-
 data_path = path.abspath(path.join(__file__ ,"../../../.."))
-dataset = pd.read_csv(data_path + dataset, sep=';')
 output_location = data_path  + output_map
-data_xy = dataset[['Longitude', 'Latitude']]
-#unique identifier and geodata
-dataset = dataset.drop(['Longitude', 'Latitude'], axis=1)
-#also drop temporal NO2 variables
-dataset = dataset.drop(['FID', 'wkd_day_value', 'wnd_day_value', 'wkd_night_value', 'wnd_night_value'], axis=1)
+dataset = pd.read_csv(data_path + dataset, sep=';')
+
+pd.set_option('display.max_columns', None)
+dataset.describe()
+
 #replace NA with 0
 dataset=dataset.fillna(0)
+#store geodata
+data_xy = dataset[['Longitude', 'Latitude']]
 
+#get rid off unnecessary variables
 
-## == CREATE DEPENDENT- AND INDEPENDENT VARIABLES == ##
+#unique identifier and geodata
+dataset = dataset.drop(['Longitude', 'Latitude'], axis=1)
 
+print(len(dataset.columns))
+
+##CREATE DEPENDENT- AND INDEPENDENT VARIABLES
 #store all column names
 all_column_names = dataset.columns
+
 #create dataset with only predictor variables
-x = dataset.drop(["mean_value_NO2"], axis=1)
+x = dataset.drop(["Lopend_gemiddelde"], axis=1)
 #store column names of predictor variables
 feature_names = x.columns
 #dependent variable
-y = dataset["mean_value_NO2"]
-
-
+y = dataset["Lopend_gemiddelde"]
+#verify if dependent variable is out of dataset
+print(len(feature_names))
 
 #transform dependent- and independent variables to numpy arrays for calculations
 x = np.array(x)
 y = np.array(y)
 
 
-medianshap_dataset = pd.read_csv(data_path  + output_map + 'df median shap cv10.csv', sep = ',')
+medianshap_dataset = pd.read_csv(data_path  + output_map + 'df median shap cv10local.csv')
+
+
+
 
 random_state = 0
 n_estimators = 1000
