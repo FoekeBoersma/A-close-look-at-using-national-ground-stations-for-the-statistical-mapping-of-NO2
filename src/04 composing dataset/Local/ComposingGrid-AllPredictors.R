@@ -17,7 +17,7 @@ library(dplyr)
 ## == IMPORT GEODATA == ##
 
 #import area of interest at 100m resolution
-grid100_Amsterdam <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/grid100Amsterdam.shp')
+grid100_Amsterdam <- readOGR('/TooBigData/grid100Amsterdam.shp')
 
 ## == data processing == ##
 
@@ -37,10 +37,10 @@ grid_centroids_3035 <- st_transform(grid_centroids_sf, crs=3035)
 ## == PREDICTORS 5 (AMSTERDAM) Local DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/5TIFS", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+rastlist <- list.files(path = "/data/5TIFS", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/5TIFS")
+setwd("/data/5TIFS")
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -109,7 +109,7 @@ print(centroids_5predictors)
 
 #import traffic data
 
-traffic <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_StudyArea.shp')
+traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp')
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -253,6 +253,6 @@ Grid100_LocalPredictors$fid <- NULL
 Grid100_LocalPredictors
 ## == export options == ##
 #shp - grid
-sf::st_write(Grid100_LocalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg", driver = "GPKG")
+sf::st_write(Grid100_LocalPredictors, dsn="/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg", driver = "GPKG")
 
 
