@@ -13,7 +13,7 @@ import re
 import sys
 import os
 import os.path as path
-from functions import (evaluate_model, cvaic)
+from functions import (cvaic)
 
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -21,11 +21,6 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 config_directory = os.path.abspath(os.path.join(current_directory, '..'))
 # Append the directory to sys.path
 sys.path.append(config_directory)
-
-# Print sys.path to verify the directory was added
-print("Current sys.path:")
-for p in sys.path:
-    print(p)
 
 # Try importing the config_03 module
 try:
@@ -46,7 +41,7 @@ no_predictors_model = config_03.parameters['no_predictors_model']
 data_path = path.abspath(path.join(__file__ ,"../../../.."))
 dataset = pd.read_csv(data_path + dataset, sep=';')
 output_location = data_path  + output_map
-
+data_xy = dataset[['Longitude', 'Latitude']]
 #unique identifier and geodata
 dataset = dataset.drop(['Longitude', 'Latitude'], axis=1)
 #also drop temporal NO2 variables
@@ -202,5 +197,6 @@ i = no_predictors_model - 2 #(a - b) - a is equal to preferred no. of predictors
 no_predictors_model_filter = novar_regex[i]
 
 dataset_predicting = dataset.filter(regex = no_predictors_model_filter)
+dataset_predicting = dataset_predicting.merge(data_xy, left_index=True, right_index=True)
 
 dataset_predicting.to_csv(output_location + '/PredictingDataset.csv')
