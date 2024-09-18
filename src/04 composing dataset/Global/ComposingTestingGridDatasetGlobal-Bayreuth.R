@@ -14,7 +14,7 @@ library(dplyr)
 ## == IMPORT GEODATA == ##
 
 #import area of interest at 100m resolution
-grid <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/grid100Bayreuth.gpkg') #obtained via AreaOfInterest-Bayreuth.R
+grid <- readOGR('/TooBigData/grid100Bayreuth.gpkg') #obtained via AreaOfInterest-Bayreuth.R
 
 ## == data processing == ##
 
@@ -36,10 +36,10 @@ print(grid_centroids_3035)
 ## == PREDICTORS 5 (Bayreuth) GLOBAL DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Bayreuth/TIFFS/8", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+rastlist <- list.files(path = "/data/Bayreuth/TIFFS/8", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Bayreuth/TIFFS/8")
+setwd("/data/Bayreuth/TIFFS/8")
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -98,7 +98,7 @@ print(centroids_5predictors)
 ## == BUILDING DENSITY == ##
 
 #import DIS, to avoid high computational time and power!
-dis <- readOGR("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/dissolve_BuildingDensity_Bayreuth.gpkg")
+dis <- readOGR("/TooBigData/dissolve_BuildingDensity_Bayreuth.gpkg")
 
 dis_BldDen <- as.data.frame(dis)
 print(dis_BldDen)
@@ -134,7 +134,7 @@ mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, BldDen100)
 
 #import traffic data
 
-traffic <- readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/Traffic/TrafficVolume_StudyArea.shp') #obtained via AssignTrafficVolumeToRoads.R
+traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp') #obtained via AssignTrafficVolumeToRoads.R
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -221,7 +221,7 @@ traffic_bufs <- traffic_per_buf  %>% dplyr::select(cenID, trafBuf25,  trafBuf50)
 # --> manually rerun setwd command to successfully make switch
 
 #put tif files into list 
-cur <- setwd("C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/NDVI")
+cur <- setwd("/data/NDVI")
 #create list of all files in defined directory
 a = list.files(cur, pattern='.tif$')
 #examine files in list
@@ -257,7 +257,7 @@ datasets <- merge(datasets, grid_centroids_3035, by= "cenID")
 #make spatial
 datasets_sf <- st_as_sf(datasets, crs=3035)
 
-#sf::st_write(datasets_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/Bayreuth/Bayreuth_datasets_sf.gpkg", driver = "GPKG")
+#sf::st_write(datasets_sf, dsn="/Bayreuth/Bayreuth_datasets_sf.gpkg", driver = "GPKG")
 
 ## == spatially join predictors with initial 100m spatial dataframe == ##
 
@@ -296,11 +296,11 @@ Grid100_GlobalPredictors$FID_1 <- NULL
 
 ## == export options == ##
 #shp - centroids
-#sf::st_write(Cen100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Cen100_GlobalPredictors-Bayreuth.gpkg", driver = "GPKG")
+#sf::st_write(Cen100_GlobalPredictors, dsn="/TooBigData/Cen100_GlobalPredictors-Bayreuth.gpkg", driver = "GPKG")
 #shp - grid format
-sf::st_write(Grid100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Bayreuth.gpkg", driver = "GPKG")
+sf::st_write(Grid100_GlobalPredictors, dsn="/TooBigData/SpatialPredictionPatterns/Grid100_GlobalPredictors-Bayreuth.gpkg", driver = "GPKG")
 Cen100_GlobalPredictors_wgs <- as.data.frame(Cen100_GlobalPredictors_wgs)
 Cen100_GlobalPredictors_wgs <- Cen100_GlobalPredictors_wgs %>% dplyr::select(-c('geometry', 'cenID.x', "cenID.y"))
 Cen100_GlobalPredictors_wgs
 #csv
-write.csv(Cen100_GlobalPredictors_wgs, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Bayreuth.csv')
+write.csv(Cen100_GlobalPredictors_wgs, '/TooBigData/SpatialPredictionPatterns/grid100_GlobalPredictors-Bayreuth.csv')

@@ -49,7 +49,6 @@ print(dataset.isna().sum().sum())
 #remove NA values
 dataset = dataset.dropna(axis = 0, how ='any', subset = None, inplace=False)
 
-
 ##CREATE DEPENDENT- AND INDEPENDENT VARIABLES
 #store all column names
 all_column_names = dataset.columns
@@ -66,7 +65,6 @@ print(len(feature_names))
 #transform dependent- and independent variables to numpy arrays for calculations
 x = np.array(x)
 y = np.array(y)
-
 
 #CONSTRUCT FUNCTION - CV FEATURE IMPORTANCE (MEAN)
 
