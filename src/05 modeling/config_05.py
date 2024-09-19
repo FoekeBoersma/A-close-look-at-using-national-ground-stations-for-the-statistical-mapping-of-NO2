@@ -4,6 +4,7 @@ input_dataset = {
 
 output = {
     "model_metrics_lasso": "model_metrics_lasso.txt",
+    "model_metrics_ridge": "model_metrics_ridge.txt",
     "output_map": "/data/output/05 modeling//"
 }
 
