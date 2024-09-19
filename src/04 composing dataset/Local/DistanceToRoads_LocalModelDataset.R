@@ -15,10 +15,10 @@ utmStr <- "+proj=utm +zone=%d +datum=NAD83 +units=m +no_defs +ellps=GRS80"
 crs_32 <- CRS(sprintf(utmStr, 32))
 
 #import datasets
-stations <- read.csv('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForModelling/LocalModels/ModellingDataset-Local-processed.csv', sep=';')
+stations <- read.csv('/LocalModels/ModellingDataset-Local-processed.csv', sep=';')
 
 #import roads 
-roads <- readOGR('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Traffic_May2022/ARCGIS/MyProject22/TrafficVolume_StudyArea.shp')
+roads <- readOGR('/TrafficVolume_StudyArea.shp')
 
 print(stations)
 #make sf
@@ -68,7 +68,7 @@ distance_to_road_NO2[is.na(distance_to_road_NO2)] <- 0
 
 #export options
 #shapefile
-sf::st_write(distance_to_road_NO2, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForModelling/LocalModels", layer='Local_ModellingDataset_distance', driver = "ESRI Shapefile")
+sf::st_write(distance_to_road_NO2, dsn="/LocalModels", layer='Local_ModellingDataset_distance', driver = "ESRI Shapefile")
 
 #attach Longitude and Latitude columns 
 
@@ -78,4 +78,4 @@ distance_to_road_NO2_xy <- merge(distance_to_road_NO2, stations_xy, by = "M_id")
 print(distance_to_road_NO2_xy)
 
 #csv
-write.csv(distance_to_road_NO2_xy, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForModelling/LocalModels/Local_ModellingDataset_distance.csv',col.names = TRUE)
+write.csv(distance_to_road_NO2_xy, '/LocalModels/Local_ModellingDataset_distance.csv',col.names = TRUE)
