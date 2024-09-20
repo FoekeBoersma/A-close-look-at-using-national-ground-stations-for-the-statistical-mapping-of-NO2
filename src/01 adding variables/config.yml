@@ -26,5 +26,7 @@ global:
 local:
   buildings: data/input/BuildingDensity/polygon_studyArea.shp
   no2: data/input/LocalModelData/LocalMeasurementStations.csv
+  no2_4weken: data/input/LocalModelData/NO2_4WEKEN.csv
+  no2_locaties: data/input/LocalModelData/NO2_LOCATIES.csv
 
 out_location: data/output/01 adding variables//

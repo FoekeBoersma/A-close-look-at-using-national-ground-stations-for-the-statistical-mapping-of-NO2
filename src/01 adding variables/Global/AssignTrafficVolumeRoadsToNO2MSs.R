@@ -21,6 +21,7 @@ library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
 library(rstudioapi)
+library(yaml)
 
 #connect to yaml file
 current_dir <- rstudioapi::getActiveDocumentContext()$path

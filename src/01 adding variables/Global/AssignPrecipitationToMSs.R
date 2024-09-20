@@ -18,6 +18,7 @@ library(stars) #necessary for st_rasterize
 require(gridExtra)
 require(raster)
 library(rstudioapi)
+library(yaml)
 
 ## == IMPORT GEODATA == ##
 #connect to yaml file

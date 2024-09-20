@@ -20,6 +20,7 @@ library(geosphere) #geosphere::dist2Line
 library(stars) #for st_rasterize
 library(base) #sprintf
 library(sfheaders) #converting to multistring
+library(yaml)
 
 ## == connect with yaml file == ##
 
