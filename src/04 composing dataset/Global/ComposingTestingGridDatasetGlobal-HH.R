@@ -133,8 +133,9 @@ mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, BldDen100)
 ## == TRAFFIC DATA == ##
 
 #import traffic data
-
-traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp') #obtained via AssignTrafficVolumeToRoads.R
+traffic_volume_study_area <- config_04$input$traffic_volume_study_area
+traffic_volume_study_area_dir <- normalizePath(file.path(parent_directory, traffic_volume_study_area ), winslash = "/")
+traffic <- readOGR(traffic_volume_study_area_dir ) #obtained via AssignTrafficVolumeToRoads.R
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -222,7 +223,9 @@ traffic_bufs <- traffic_per_buf  %>% dplyr::select(cenID, trafBuf25,  trafBuf50)
 # --> manually rerun setwd command to successfully make switch
 
 #put tif files into list 
-cur <- setwd("/data/NDVI")
+ndvi_tif_dir <- config_04$input$ndvi_map
+ndvi_tif_map <- normalizePath(file.path(parent_directory, ndvi_tif_dir ), winslash = "/")
+cur <- setwd(ndvi_tif_map)
 #create list of all files in defined directory
 a = list.files(cur, pattern='.tif$')
 #examine files in list
