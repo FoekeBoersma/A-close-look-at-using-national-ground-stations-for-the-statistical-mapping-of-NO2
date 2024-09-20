@@ -26,7 +26,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 ## == import geodata == ##
 
 #all variables are necessary for spatial grouping determination
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -38,7 +38,7 @@ data_sf = st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
 data_3035 <- st_transform(data_sf,crs=3035)
 
 #import grid where predictions will be projected on
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
 
 #make spatial - obtain the geometry for each sample
 grid100_sf <- st_as_sf(grid100)
@@ -99,9 +99,9 @@ Lowpopulation <- data_3035[data_3035$spachar == 2, ]
 FarFromRoad <- data_3035[data_3035$spachar == 3, ]
 
 #shp - grid
-#sf::st_write(Urb_grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/Urban_100grid_1.gpkg", driver = "GPKG")
-#sf::st_write(Lowpop_grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/Lowpop_grid100_2.gpkg", driver = "GPKG")
-#sf::st_write(FFR_grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/Amsterdam/FFR_grid100_1.gpkg", driver = "GPKG")
+#sf::st_write(Urb_grid100_sf, dsn="/TooBigData/LocalModels/Urban_100grid_1.gpkg", driver = "GPKG")
+#sf::st_write(Lowpop_grid100_sf, dsn="/TooBigData/LocalModels/Lowpop_grid100_2.gpkg", driver = "GPKG")
+#sf::st_write(FFR_grid100_sf, dsn="/TooBigData/LocalModels/Amsterdam/FFR_grid100_1.gpkg", driver = "GPKG")
 
 ## == Urban - linear modeling == ##
 
@@ -161,4 +161,4 @@ merge <- merge[,c("nightlight_450" ,"nightlight_4950" ,"population_1000","popula
 merge_sf <- st_as_sf(merge)
 
 ## == export option == ##
-sf::st_write(merge_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/predictedNO2_Linear_SeparatingSpatialGroups.gpkg", driver = "GPKG")
+sf::st_write(merge_sf, dsn="/TooBigData/LocalModels/predictedNO2_Linear_SeparatingSpatialGroups.gpkg", driver = "GPKG")

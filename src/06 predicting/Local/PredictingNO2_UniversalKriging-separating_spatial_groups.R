@@ -32,7 +32,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -50,7 +50,7 @@ data_3035 <- as(data_3035, 'Spatial')
 
 # define grid for projection 
 # import AOI
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
 
 #convert to sf to use function "rename"
 grid100 <- st_as_sf(grid100)
@@ -250,7 +250,7 @@ plot(raster_uk_Urban)
 raster_uk_Urban[is.na(raster_uk_Urban)] <- 0
 
 #export option - to raster
-#writeRaster(raster_uk_Urban, paste0('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Urban.tif'))
+#writeRaster(raster_uk_Urban, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Urban.tif'))
 
 # Extract the raster values underlying the polygons
 
@@ -268,10 +268,10 @@ Urb_grid100_UK_values_Urban <- Urb_grid100_UK_values_Urban %>% rename(predictedU
 #convert NA to 0's
 Urb_grid100_UK_values_Urban[is.na(Urb_grid100_UK_values_Urban)] <- 0
 
-#sf::st_write(Urb_grid100_UK_values_Urban, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/Urb_grid100_rasterUK_Amsterdam_Urban.gpkg", driver = "GPKG")
+#sf::st_write(Urb_grid100_UK_values_Urban, dsn="/LocalModels/Urb_grid100_rasterUK_Amsterdam_Urban.gpkg", driver = "GPKG")
 
 #export option - to csv
-#write.csv(Urb_grid100_UK_values_Urban, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Urban.csv')
+#write.csv(Urb_grid100_UK_values_Urban, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Urban.csv')
 
 
 ## == Low Population - Kriging == ##
@@ -349,7 +349,7 @@ raster_uk_Lowpop[is.na(raster_uk_Lowpop)] <- 0
 
 
 #export option - to raster
-#writeRaster(raster_uk_Lowpop, paste0('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Lowpop.tif'))
+#writeRaster(raster_uk_Lowpop, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Lowpop.tif'))
 
 # Extract the raster values underlying the polygons
 
@@ -368,10 +368,10 @@ Lowpop_grid100_UK_values_Lowpop <- Lowpop_grid100_UK_values_Lowpop %>% rename(pr
 #convert NA to 0's
 Lowpop_grid100_UK_values_Lowpop[is.na(Lowpop_grid100_UK_values_Lowpop)] <- 0
 
-#sf::st_write(Lowpop_grid100_UK_values_Lowpop, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/Lowpop_grid100_rasterUK_Amsterdam_Lowpop.gpkg", driver = "GPKG")
+#sf::st_write(Lowpop_grid100_UK_values_Lowpop, dsn="/LocalModels/Lowpop_grid100_rasterUK_Amsterdam_Lowpop.gpkg", driver = "GPKG")
 
 #export option - to csv
-#write.csv(Lowpop_grid100_UK_values_Lowpop, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Lowpop.csv')
+#write.csv(Lowpop_grid100_UK_values_Lowpop, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Lowpop.csv')
 
 
 
@@ -407,7 +407,7 @@ autofit_params_ffr <- variogram_auto_ffr$var_model #create dataset including var
 FarFromRoad <- FarFromRoad %>% select(c("Lopend_gemiddelde","nightlight_450","nightlight_4950","population_3000","road_class_1_5000","road_class_2_1000","road_class_2_5000","road_class_3_100","road_class_3_300","trafBuf50"))
 # 
 # FarFromRoad_sf <- st_as_sf(FarFromRoad)
-# sf::st_write(FarFromRoad_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/FarFromRoad.gpkg", driver = "GPKG")
+# sf::st_write(FarFromRoad_sf, dsn="/LocalModels/FarFromRoad.gpkg", driver = "GPKG")
 
 FarFromRoad$Lopend_gemiddelde
 
@@ -455,7 +455,7 @@ raster_uk_FFR[is.na(raster_uk_FFR)] <- 0
 
 
 #export option - to raster
-#writeRaster(raster_uk_FFR, paste0('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_FFR.tif'))
+#writeRaster(raster_uk_FFR, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_FFR.tif'))
 
 # Extract the raster values underlying the polygons
 
@@ -474,10 +474,10 @@ FFR_grid100_UK_values_FFR <- FFR_grid100_UK_values_FFR %>% rename(predictedUK_FF
 #convert NA to 0's
 FFR_grid100_UK_values_FFR[is.na(FFR_grid100_UK_values_FFR)] <- 0
 
-#sf::st_write(FFR_grid100_UK_values_FFR, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/Grid100_rasterUK_Amsterdam_FFR.gpkg", driver = "GPKG")
+#sf::st_write(FFR_grid100_UK_values_FFR, dsn="/LocalModels/Grid100_rasterUK_Amsterdam_FFR.gpkg", driver = "GPKG")
 
 #export option - to csv
-#write.csv(FFR_grid100_UK_values_FFR, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
+#write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
 
 
 
@@ -501,7 +501,7 @@ print(overlay_mean)
 plot(overlay_mean)
 
 #export option - to raster
-#writeRaster(overlay_mean, paste0('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/test/overlay_SpatialGroups.tif'))
+#writeRaster(overlay_mean, paste0('/TooBigData/LocalModels/test/overlay_SpatialGroups.tif'))
 
 
 
@@ -521,10 +521,10 @@ cen100_UK_values_overlay_join <- cen100_UK_values_overlay_join %>% rename(predNO
 #convert NA to 0's
 cen100_UK_values_overlay_join[is.na(cen100_UK_values_overlay_join)] <- 0
 
-sf::st_write(cen100_UK_values_overlay_join, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/test_3035/predictedNO2_UK_SeparatingSpatialGroups.gpkg", driver = "GPKG")
+sf::st_write(cen100_UK_values_overlay_join, dsn="/TooBigData/LocalModels/test_3035/predictedNO2_UK_SeparatingSpatialGroups.gpkg", driver = "GPKG")
 
 #export option - to csv
-#write.csv(FFR_grid100_UK_values_FFR, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
+#write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
 
 
 

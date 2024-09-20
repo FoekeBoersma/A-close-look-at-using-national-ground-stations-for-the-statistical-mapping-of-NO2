@@ -18,7 +18,7 @@ crs_32 <- CRS(sprintf(utmStr, 32))
 #IMPORT GEODATA
 
 #import area of interest at 100m resolution
-grid <- readOGR('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/AOI/grid100Utrecht.gpkg')
+grid <- readOGR('/Grid100/Utrecht/AOI/grid100Utrecht.gpkg')
 
 ## == data processing == ##
 
@@ -40,10 +40,10 @@ print(grid_centroids_32)
 ## == PREDICTORS 5 (AMSTERDAM) GLOBAL DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/TIFFS/8", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+rastlist <- list.files(path = "/Grid100/Utrecht/TIFFS/8", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/TIFFS/7")
+setwd("/Grid100/Utrecht/TIFFS/7")
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -104,7 +104,7 @@ print(centroids_5predictors)
 ## == BUILDING DENSITY == ##
 
 #import DIS, to avoid high computational time and power!
-dis <- readOGR('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/AOI/DIS_BuildingDensity_Utrecht.shp')
+dis <- readOGR('/Grid100/Utrecht/AOI/DIS_BuildingDensity_Utrecht.shp')
 dis_BldDen <- as.data.frame(dis)
 print(dis_BldDen)
 dis_BldDen <- dis_BldDen %>% rename(BuiltArea = SUM_BuiltA) #this option is maintained when the layer is imported
@@ -141,7 +141,7 @@ mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, BldDen100)
 
 #import traffic data
 
-traffic <- readOGR('C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Traffic_May2022/ARCGIS/MyProject22/TrafficVolume_StudyArea.shp')
+traffic <- readOGR('/ARCGIS/MyProject22/TrafficVolume_StudyArea.shp')
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_32))
@@ -273,7 +273,7 @@ print(datasets)
 
 datasets_sf <- st_as_sf(datasets, crs=crs_32)
 
-sf::st_write(datasets_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/datasets_sf.gpkg", driver = "GPKG")
+sf::st_write(datasets_sf, dsn="/Grid100/Utrecht/datasets_sf.gpkg", driver = "GPKG")
 
 ## == spatially join predictors with initial 100m spatial dataframe == ##
 
@@ -315,9 +315,9 @@ Grid100_GlobalPredictors$FID_1 <- NULL
 
 ## == export options == ##
 #shp - cen
-sf::st_write(Cen100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/Cen100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
+sf::st_write(Cen100_GlobalPredictors, dsn="/Grid100/Utrecht/Cen100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
 #shp - grid
-sf::st_write(Grid100_GlobalPredictors, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/Grid100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
+sf::st_write(Grid100_GlobalPredictors, dsn="/Grid100/Utrecht/Grid100_GlobalPredictors-Utrecht.gpkg", driver = "GPKG")
 
 #csv
-write.csv(Cen100_GlobalPredictors_wgs, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Utrecht/grid100_GlobalPredictors-Utrecht.csv')
+write.csv(Cen100_GlobalPredictors_wgs, '/Grid100/Utrecht/grid100_GlobalPredictors-Utrecht.csv')
