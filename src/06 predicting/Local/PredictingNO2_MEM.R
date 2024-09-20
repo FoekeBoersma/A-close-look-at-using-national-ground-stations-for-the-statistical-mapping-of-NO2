@@ -24,7 +24,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -51,7 +51,7 @@ data_3035$spachar = ifelse(data_3035$population_1000 < quantile(data_3035$popula
 data_3035$spachar = ifelse((data_3035$spachar == 1 | data_3035$spachar == 2), data_3035$spachar, 3)
 
 #import grid where predictions will be projected on
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
 
 #make spatial - obtain the geometry for each sample
 grid100_sf <- st_as_sf(grid100)
@@ -81,4 +81,4 @@ model <- lmer(Lopend_gemiddelde ~ 1 + nightlight_450 +  nightlight_4950  + popul
 grid100_sf$predNO2_MEM <- predict(model, grid100_sf)
 
 ## == export option == ##
-sf::st_write(grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/predictedNO2_MEM.gpkg", driver = "GPKG")
+sf::st_write(grid100_sf, dsn="/TooBigData/LocalModels/predictedNO2_MEM.gpkg", driver = "GPKG")

@@ -35,7 +35,7 @@ crs_32 <- CRS(sprintf(utmStr, 32))
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -50,7 +50,7 @@ data_32 <- as(data_32, 'Spatial')
 
 # define grid for projection 
 # import AOI
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
 
 #convert to sf to use function "rename"
 grid100 <- st_as_sf(grid100)
@@ -126,7 +126,7 @@ plot(raster_uk)
 raster_uk[is.na(raster_uk)] <- 0
 
 #export option - to raster
-writeRaster(raster_uk, paste0('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/rasterUK.tif'))
+writeRaster(raster_uk, paste0('/TooBigData/LocalModels/rasterUK.tif'))
 
 
 
@@ -150,10 +150,10 @@ cen100_uk_values_predictedNO2 <- cen100_uk_values_predictedNO2 %>% rename(predNO
 cen100_uk_values_predictedNO2[is.na(cen100_uk_values_predictedNO2)] <- 0
 
 #export option
-sf::st_write(cen100_uk_values_predictedNO2, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/predictedNO2_UK_formula.gpkg", driver = "GPKG")
+sf::st_write(cen100_uk_values_predictedNO2, dsn="/TooBigData/LocalModels/predictedNO2_UK_formula.gpkg", driver = "GPKG")
 
 #export option - to csv
-#write.csv(FFR_grid100_UK_values_FFR, 'C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
+#write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
 
 
 

@@ -24,7 +24,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/PredictingDataset.csv', sep=',')
+data <- read.csv('/data/LocalModelData/PredictingDataset.csv', sep=',')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -36,7 +36,7 @@ data_sf = st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
 data_3035 <- st_transform(data_sf,crs=3035)
 
 #import grid where predictions will be projected on
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
 
 #make spatial - obtain the geometry for each sample
 grid100_sf <- st_as_sf(grid100)
@@ -104,4 +104,4 @@ print(OK_sf)
 OK_grid <- st_join(grid100_sf, OK_sf)
 
 ## == export option == ##
-sf::st_write(OK_grid, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/LocalModels/predictedNO2_OK.gpkg", driver = "GPKG")
+sf::st_write(OK_grid, dsn="/TooBigData/LocalModels/predictedNO2_OK.gpkg", driver = "GPKG")

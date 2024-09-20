@@ -236,7 +236,7 @@ traffic_bufs <- traffic_per_buf  %>% dplyr::select(cenID, trafBuf25,  trafBuf50)
 #put tif files into list 
 ndvi_tif_dir <- config_04$input$ndvi_map
 ndvi_tif_map <- normalizePath(file.path(parent_directory, ndvi_tif_dir ), winslash = "/")
-cur <- setwd(ndvi_tif_dir)
+cur <- setwd(ndvi_tif_map)
 #create list of all files in defined directory
 a = list.files(cur, pattern='.tif$')
 #examine files in list
