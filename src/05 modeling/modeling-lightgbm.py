@@ -12,7 +12,6 @@ import lightgbm as lgb
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 from pprint import pprint
-##SOURCE: https://dataaspirant.com/lasso-regression/#t-1606404715785
 
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__))
