@@ -10,6 +10,7 @@ library(leaflet)
 library(sp)
 library(tmap) #for visualization purposes
 library(bnspatial)
+library(yaml)
 
 ## == connect with yaml file == ##
 
@@ -29,7 +30,8 @@ ndvi_tif_map <- normalizePath(file.path(parent_directory, ndvi_tif_dir ), winsla
 #put tif files into list 
 cur <- setwd(ndvi_tif_map)
 #create list of all files in defined directory
-a = list.files(cur, pattern='.tif$')
+# a = list.files(cur, pattern='.tif$')
+a = list.files(cur, pattern='.tif$', full.names = TRUE)
 #examine files in list
 print(a)
 #concatenate multiple vectors to single vector via "stack"-function.
@@ -51,7 +53,7 @@ coords <- ms_stations[, c("long", "lat")]
 st_crs(b)
 crs <- CRS("+proj=longlat +datum=WGS84")
 
-ms_stations$M_id <- seq(1, nrow(ms)) #assign unique identifier per measurement station - M_id
+ms_stations$M_id <- seq(1, nrow(ms_stations)) #assign unique identifier per measurement station - M_id
 
 #filter only relevant data
 ms_stations <- ms_stations %>% dplyr::select(M_id, long, lat)

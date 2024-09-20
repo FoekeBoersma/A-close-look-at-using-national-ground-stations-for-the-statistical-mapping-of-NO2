@@ -9,6 +9,7 @@ library(sp) #spatial operations
 library(leaflet) #mapping in OSM
 library(terra) #rasterize
 library(stars) #necessary for st_rasterize
+library(yaml)
 
 #crs used: 3035
 #CRS 3035, also known as the Coordinate Reference System (CRS) with EPSG code 3035, is a specific projection used for mapping and spatial data analysis. 
