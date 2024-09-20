@@ -1,2 +1,6 @@
+input:
+  ndvi_map: data/input/NDVI/
+  traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
+
 out_location:
   data/output/04 composing dataset/

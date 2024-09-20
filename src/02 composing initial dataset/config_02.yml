@@ -11,5 +11,8 @@ local:
   ndvi_processed: data/input/NDVI/processed/ms_NDVI_local.shp
   traffic_processed: data/input/Traffic/processed/traffic_NO2_Local.shp
 
+tifs:
+  tifs5: data/input/5TIFs/
+
 out_location:
   data/output/02 composing initial dataset/

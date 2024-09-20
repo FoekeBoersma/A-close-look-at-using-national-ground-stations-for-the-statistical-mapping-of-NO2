@@ -18,6 +18,7 @@ library(bnspatial)
 library(gstat)
 library(geosphere) #geosphere::dist2Line
 library(stars) #for st_rasterize
+library(yaml)
 
 ## == connect with yaml file == ##
 

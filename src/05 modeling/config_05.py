@@ -7,6 +7,7 @@ output = {
     "model_metrics_ridge": "model_metrics_ridge.txt",
     "model_metrics_random_forest": "model_metrics_random_forest.txt",
     "model_metrics_lightgbm": "model_metrics_lightgbm.txt",
+    "model_metrics_xgboost": "model_metrics_xgboost.txt",
     "output_map": "/data/output/05 modeling//"
 }
 

@@ -2,7 +2,7 @@ global:
   base: dirname(current_dir)
   buildings: data/input/BuildingDensity/polygon_studyArea.shp
   no2: data/input/GlobalModelData/InitialGlobalDataset.csv
-  ndvi_map: data/input/NDVI
+  ndvi_map: data/input/NDVI/
   precipitation: data/input/Precipitation/MonthlyPrecipitation.csv
   traffic_volume_germany: data/input/Traffic/TrafficVolume_RoadsGermany.shp
   traffic_volume_netherlands: data/input/Traffic/TrafficVolume_RoadsNL.shp
@@ -26,5 +26,7 @@ global:
 local:
   buildings: data/input/BuildingDensity/polygon_studyArea.shp
   no2: data/input/LocalModelData/LocalMeasurementStations.csv
+  no2_4weken: data/input/LocalModelData/NO2_4WEKEN.csv
+  no2_locaties: data/input/LocalModelData/NO2_LOCATIES.csv
 
-out_location: data/output/01 adding variables/
+out_location: data/output/01 adding variables//
