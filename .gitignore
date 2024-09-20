@@ -3,3 +3,4 @@ data/output/*
 src/07 evaluating/Local/.Rhistory
 src/02 composing initial dataset/Local/.Rhistory
 *.pyc
+data/input/5TIFs

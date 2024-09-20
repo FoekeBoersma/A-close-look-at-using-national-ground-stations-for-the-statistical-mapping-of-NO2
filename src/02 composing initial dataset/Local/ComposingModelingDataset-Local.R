@@ -205,7 +205,10 @@ colnames(ms_prec_bd_ndvi_traf)
 ## == import geodata (5 tifs) == ##
 
 #define current working directory
-setwd("C:/Users/foeke/OneDrive/Documenten/april onwards/2022/tifs/5TIFS")
+
+tifs5 <- config_02$tifs$tifs5
+tifs5_dir <- normalizePath(file.path(parent_directory, tifs5 ), winslash = "/")
+setwd(tifs5_dir)
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
