@@ -119,7 +119,7 @@ while(j <= length(buffer_vars)){
   #make clip spatial to export as shapefile
   clip <- st_as_sf(clip)
   #export option
-  sf::st_write(clip, dsn=out_location_dir, layer=layer_clip, driver = "ESRI Shapefile")
+  # sf::st_write(clip, dsn=out_location_dir, layer=layer_clip, driver = "ESRI Shapefile")
   
   ## == SELECT ROADS WITHIN BUFFER X == ##
   intersect_j <- st_intersection(clip, buffer_vars[[j]],  sp = TRUE)
@@ -140,7 +140,7 @@ while(j <= length(buffer_vars)){
   print(layer_dissolve)
   
   #export option
-  sf::st_write(dissolve, dsn=out_location_dir, layer=layer_dissolve, driver = "ESRI Shapefile")
+  # sf::st_write(dissolve, dsn=out_location_dir, layer=layer_dissolve, driver = "ESRI Shapefile")
   
 
   #merge datasets via left_join
@@ -166,7 +166,7 @@ while(j <= length(buffer_vars)){
   print(layer_mer)
   
   #export option
-  sf::st_write(merge, dsn=out_location_dir, layer=layer_mer, driver = "ESRI Shapefile")
+  # sf::st_write(merge, dsn=out_location_dir, layer=layer_mer, driver = "ESRI Shapefile")
   
   
   #next buffer dataset

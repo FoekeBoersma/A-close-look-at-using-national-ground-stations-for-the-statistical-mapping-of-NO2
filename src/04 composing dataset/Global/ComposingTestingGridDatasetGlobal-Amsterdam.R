@@ -10,6 +10,7 @@ library(leaflet) #mapping in OSM
 library(terra) #rasterize
 library(stars) #necessary for st_rasterize
 library(dplyr)
+library(yaml)
 
 
 #connect to yaml file

@@ -33,7 +33,7 @@ config <- yaml.load_file(config_path)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 
 ## == define output path == ##
-out_location <- config_04$out_location
+out_location <- config$out_location
 out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
 ## == intialize coordinates - area of interest == ##
@@ -68,5 +68,4 @@ poly_3035 <- st_transform(poly_sf, crs=3035)
 grid <- st_make_grid(poly_3035, cellsize=100)
 
 #export option
-sf::st_write(grid, dsn=out_location_dir+'/grid100Bayreuth.gpkg', driver = "GPKG")
-
+sf::st_write(grid, dsn=file.path(out_location_dir, 'grid100Bayreuth.gpkg'), driver = "GPKG")
