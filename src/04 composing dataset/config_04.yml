@@ -1,6 +1,10 @@
-input:
+input_data:
+  amsterdam100m_grid:  data/input/TooBigData/Amsterdam/grid100Amsterdam.shp
   ndvi_map: data/input/NDVI/
   traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
+  
+tifs:
+  tifs5: data/input/5TIFs/
 
 out_location:
   data/output/04 composing dataset/

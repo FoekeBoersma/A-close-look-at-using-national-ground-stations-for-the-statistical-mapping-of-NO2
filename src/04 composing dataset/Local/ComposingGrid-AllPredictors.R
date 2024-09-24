@@ -14,10 +14,30 @@ library(terra) #rasterize
 library(stars) #necessary for st_rasterize
 library(dplyr)
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config_04.yml")
+
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+amsterdam100m_grid <- config$input_data$amsterdam100m_grid
+amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, amsterdam100m_grid ), winslash = "/")
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
+
 ## == IMPORT GEODATA == ##
 
 #import area of interest at 100m resolution
-grid100_Amsterdam <- readOGR('/TooBigData/grid100Amsterdam.shp')
+grid100_Amsterdam <- readOGR(amsterdam100m_grid_dir)
 
 ## == data processing == ##
 
@@ -37,10 +57,13 @@ grid_centroids_3035 <- st_transform(grid_centroids_sf, crs=3035)
 ## == PREDICTORS 5 (AMSTERDAM) Local DATASET == ##
 
 #first import all files in a single folder as a list 
-rastlist <- list.files(path = "/data/5TIFS", pattern='.TIF$', all.files=TRUE, full.names=FALSE)
+
+tifs5 <- config$tifs$tifs5
+tifs5_dir <- normalizePath(file.path(parent_directory, tifs5 ), winslash = "/")
+rastlist <- list.files(path = tifs5_dir, pattern='.TIF$', all.files=TRUE, full.names=FALSE)
 
 #define current working directory
-setwd("/data/5TIFS")
+setwd(tifs5_dir)
 
 #import tif-files
 rlist=list.files(getwd(), pattern="tif$", full.names=FALSE)
@@ -49,7 +72,7 @@ for(i in rlist) { assign(unlist(strsplit(i, "[.]"))[1], raster(i)) }
 print(rlist)
 
 
-## == extract to centroids == ## - best 8/9 (excluding trafBuf100 and bldDen100)
+## == extract to centroids == ## -
 
 #initialize lists that will be used in loop
 predictors = list(nightlight_450, 
@@ -109,7 +132,10 @@ print(centroids_5predictors)
 
 #import traffic data
 
-traffic <- readOGR('/data/Traffic/TrafficVolume_StudyArea.shp')
+processed_traffic_dataset <- config$input$traffic_volume_study_area
+processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/")
+
+traffic <- readOGR(processed_traffic_dataset_dir)
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))
@@ -124,28 +150,21 @@ traffic_sf <- traffic_sf[,c("AvrgHrT", "geometry")]
 bufs = list(25, 50)
 #create for loop, thereby creating a different buffer per iteration.
 buffer_vars = list()
-#loop
+
 for(i in bufs){
   buf_i <- st_buffer(grid_centroids_3035, i)
   assign(paste("buf", i, "m", sep = ""), buf_i)
   
-  #assign coordinate sustem
+  #assign coordinate system
   buf_i <- st_as_sf(buf_i)
   st_crs(buf_i, crs=3035)
   st_crs(buf_i)
   #store variable in loop
   buffer_vars[[paste("buf", i, "m", sep = "")]] <- buf_i
   
-  #export option
   layer <- paste("buf", i, "m", sep = "")
-  print(layer)
   
 }
-
-summary(buffer_vars)
-
-
-## LOOP 
 
 #make normal dataframe to perform left_join
 grid_centroids_df <- as.data.frame(grid_centroids_sf)
@@ -154,7 +173,6 @@ i=1
 j=1
 #list where loop results will be stored to for each iteration
 merge_list = list()
-
 
 while(j <= length(buffer_vars)){
   #clip - traffic dataset will be assigned to buffers 
@@ -187,20 +205,16 @@ while(j <= length(buffer_vars)){
   j = j+1
 }
 
-#merge traffic data frames together
-summary(merge_list)
+
 #merge all data frames together
 traffic_per_buf <- merge_list %>% reduce(full_join, by='cenID')
-#Examine
-#print(traffic_per_buf)
 
 traffic_bufs <- traffic_per_buf  %>% dplyr::select(cenID, trafBuf25,  trafBuf50)
-
 
 ## == merge data frames together== ##
 
 datasets <- list(traffic_bufs, centroids_5predictors,  by="cenID")
-#convert to dataframae
+#convert to dataframe
 datasets <- as.data.frame(datasets)
 
 datasets <- datasets %>% dplyr::select(cenID, nightlight_450, 
@@ -208,11 +222,8 @@ datasets <- datasets %>% dplyr::select(cenID, nightlight_450,
                                        road_class_1_5000,road_class_2_100, road_class_2_1000 , road_class_1_100,
                                        road_class_2_5000, road_class_3_100, road_class_3_300, trafBuf50)
 
-print(datasets)
 
 datasets <- merge(datasets, grid_centroids_3035, by= "cenID")
-print(datasets)
-
 datasets_sf <- st_as_sf(datasets, crs=3035)
 
 ## == spatially join predictors with initial 100m spatial dataframe == ##
@@ -221,38 +232,31 @@ datasets_sf <- st_as_sf(datasets, crs=3035)
 
 #Centroids
 Cen100_LocalPredictors <- st_join(grid_centroids_3035, datasets_sf, join=st_nearest_feature)
-
 Cen100_LocalPredictors[is.na(Cen100_LocalPredictors)]<- 0
-
-print(Cen100_LocalPredictors)
 
 #create longitude and latitude columns
 
 #convert to wgs 
 Cen100_LocalPredictors_wgs <- st_transform(Cen100_LocalPredictors, crs=4326)
-print(Cen100_LocalPredictors_wgs)
 #extract latitude- and longitude-columns from geometry-column.
 Cen100_LocalPredictors_wgs <- Cen100_LocalPredictors_wgs %>%
   mutate(Longitude = unlist(map(Cen100_LocalPredictors_wgs$geometry,1)),
          Latitude = unlist(map(Cen100_LocalPredictors_wgs$geometry,2)))
 
-
 #Grid
 
 #remove NA's and change to 0
 datasets_sf[is.na(datasets_sf)] <- 0
-print(datasets_sf)
 
 Grid100_LocalPredictors <- st_join(grid_3035, datasets_sf, join=st_nearest_feature)
 #remove NA's and change to 0
 Grid100_LocalPredictors[is.na(Grid100_LocalPredictors)] <- 0
 
-print(Grid100_LocalPredictors)
 Grid100_LocalPredictors$cenID <- NULL
 Grid100_LocalPredictors$fid <- NULL
 Grid100_LocalPredictors
 ## == export options == ##
 #shp - grid
-sf::st_write(Grid100_LocalPredictors, dsn="/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg", driver = "GPKG")
+sf::st_write(Grid100_LocalPredictors, dsn=file.path(out_location_dir, "Grid100_LocalPredictors_Amsterdam.gpkg"), driver = "GPKG")
 
 
