@@ -9,16 +9,37 @@ library(sp) #spatial operations
 library(leaflet) #mapping in OSM
 library(terra) #rasterize
 library(stars) #necessary for st_rasterize
+library(yaml)
 
+#connect to yaml file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+# Move one level up in the directory
+config_dir <- dirname(dirname(current_dir))
+# Construct the path to the YAML configuration file
+config_path <- file.path(config_dir, "config_04.yml")
+
+# Read the YAML configuration file
+config <- yaml.load_file(config_path)
+
+# Use dirname() to get the parent directory
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+## == define output path == ##
+out_location <- config$out_location
+out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 ##  First project data into a planar coordinate system (here UTM zone 32)
 utmStr <- "+proj=utm +zone=%d +datum=NAD83 +units=m +no_defs +ellps=GRS80"
 crs_32 <- CRS(sprintf(utmStr, 32))
 
 #import datasets
-stations <- read.csv('/LocalModels/ModellingDataset-Local-processed.csv', sep=';')
+modeling_dataset_local_processed <- config$input_data$modeling_dataset_local_processed
+modeling_dataset_local_processed_dir <- normalizePath(file.path(parent_directory, modeling_dataset_local_processed ), winslash = "/") 
+stations <- read.csv(modeling_dataset_local_processed_dir, sep=';')
 
-#import roads 
-roads <- readOGR('/TrafficVolume_StudyArea.shp')
+#import roads
+processed_traffic_dataset <- config$input$traffic_volume_study_area
+processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/") 
+roads <- readOGR(processed_traffic_dataset_dir )
 
 print(stations)
 #make sf
@@ -26,7 +47,6 @@ roads_sf <- st_as_sf(roads)
 stations$M_id <- seq(1, nrow(stations))
 stations_xy <- stations[, c("M_id", "Longitude", "Latitude")]
 stations_sf <- st_as_sf(stations, coords = c("Longitude", "Latitude"), crs=4326)
-
 
 #crs should be same
 roads_sf <- st_transform(roads_sf, crs= crs_32)
@@ -68,14 +88,12 @@ distance_to_road_NO2[is.na(distance_to_road_NO2)] <- 0
 
 #export options
 #shapefile
-sf::st_write(distance_to_road_NO2, dsn="/LocalModels", layer='Local_ModellingDataset_distance', driver = "ESRI Shapefile")
+sf::st_write(distance_to_road_NO2, dsn=out_location_dir, layer='Local_ModellingDataset_distance', driver = "ESRI Shapefile")
 
 #attach Longitude and Latitude columns 
-
-
 distance_to_road_NO2_xy <- merge(distance_to_road_NO2, stations_xy, by = "M_id")
 
 print(distance_to_road_NO2_xy)
 
 #csv
-write.csv(distance_to_road_NO2_xy, '/LocalModels/Local_ModellingDataset_distance.csv',col.names = TRUE)
+write.csv(out_location_dir , 'Local_ModellingDataset_distance.csv',col.names = TRUE)
