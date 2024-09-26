@@ -34,7 +34,6 @@ xym <- cbind(x_coord, y_coord)
 polygon = Polygon(xym) #create polygon
 polygons = Polygons(list(polygon),1) #wrap into a Polygons object
 spatial_polygon = SpatialPolygons(list(polygons)) #wrap into a SpatialPolygons object
-
 proj4string(spatial_polygon) = CRS("+proj=longlat +datum=WGS84 +no_defs +type=crs")
 
 # Convert to sf object
@@ -44,7 +43,6 @@ polygon_sf <- st_as_sf(spatial_polygon)
 
 ##  First project data into a planar coordinate system (here 3035 - Lambert Azimuthal Equal Area projection)
 polygon_3035 <- st_transform(polygon_sf, crs=3035)
-
 grid_Hamburg <- st_make_grid(polygon_3035, cellsize=100)
 
 #export option

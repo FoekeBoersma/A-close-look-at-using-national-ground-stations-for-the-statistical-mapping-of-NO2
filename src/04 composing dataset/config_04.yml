@@ -3,6 +3,7 @@ input_data:
   ndvi_map: data/input/NDVI/
   traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
   modeling_dataset_local_processed: data/input/LocalModelData/ModellingDataset-Local-processed.csv
+  polygonbuilding_studyArea: data/input/BuildingDensity/polygonbuilding_studyArea.shp
   
 tifs:
   tifs5: data/input/5TIFs/
