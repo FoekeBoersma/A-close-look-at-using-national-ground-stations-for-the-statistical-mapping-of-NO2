@@ -79,6 +79,8 @@ centroids_5predictors <- centroids_5predictors %>%
   dplyr::select(cenID, population_3000, road_class_3_3000, population_1000, nightlight_450,
                 road_class_2_25, nightlight_3150, road_class_3_300, trop_mean_filt)
 
+
+
 # BUILDING DENSITY
 grid_bldden_100m_path <- file.path(out_location_dir, 'grid_bldden_100m.shp')
 dis <- readOGR(grid_bldden_100m_path )
@@ -119,7 +121,7 @@ traffic_per_buf <- merge_list %>% reduce(full_join, by = 'cenID') %>%
   dplyr::select(cenID, trafBuf25, trafBuf50)
 
 # NDVI EXTRACTION
-ndvi_tif_dir <- normalizePath(file.path(parent_directory, config$input$ndvi_map), winslash = "/")
+ndvi_tif_dir <- normalizePath(file.path(parent_directory, config$input_data$ndvi_map), winslash = "/")
 ndvi_files <- list.files(ndvi_tif_dir, pattern = '.tif$', full.names = TRUE)
 ndvi_stack <- stack(ndvi_files)
 

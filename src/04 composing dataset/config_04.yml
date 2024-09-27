@@ -1,12 +1,22 @@
 input_data:
   amsterdam100m_grid:  data/input/TooBigData/Amsterdam/grid100Amsterdam.shp
+  bayreuth100m_grid:  data/input/TooBigData/Bayreuth/grid100Bayreuth.gpkg
   ndvi_map: data/input/NDVI/
   traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
   modeling_dataset_local_processed: data/input/LocalModelData/ModellingDataset-Local-processed.csv
   polygonbuilding_studyArea: data/input/BuildingDensity/polygonbuilding_studyArea.shp
+  polygonbuilding_DNL: data/input/TooBigData/polygonbuildings_DNL.shp
+  grid_bldden_bayreuth: data/output/04 composing dataset/grid_bldden_100m_bayreuth.shp
   
 tifs:
   tifs5: data/input/5TIFs/
+  tifs5_bayreuth: data/input/TooBigData/Bayreuth/TIFFS/8/
+
 
 out_location:
   data/output/04 composing dataset/
+
+out_files:
+  bayreuth_100mgrid: 'Cen100_GlobalPredictors-Bayreuth.gpkg'
+  bayreuth_100mgrid_csv: 'grid100_GlobalPredictors-Bayreuth.csv'
+  
