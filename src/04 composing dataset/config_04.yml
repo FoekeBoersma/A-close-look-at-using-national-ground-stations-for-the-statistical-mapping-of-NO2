@@ -10,12 +10,14 @@ input_data:
   polygonbuilding_DNL: data/input/TooBigData/polygonbuildings_DNL.shp
   grid_bldden_bayreuth: data/output/04 composing dataset/grid_bldden_100m_bayreuth.shp
   grid_bldden_hamburg: data/output/04 composing dataset/grid_bldden_100m_hamburg.shp
+  grid_bldden_utrecht: data/output/04 composing dataset/grid_bldden_100m_utrecht.shp
 
   
 tifs:
   tifs5: data/input/5TIFs/
   tifs5_bayreuth: data/input/TooBigData/Bayreuth/TIFFS/8/
   tifs5_hamburg: data/input/TooBigData/Hamburg/TIFFS/1/
+  tifs5_utrecht: data/input/TooBigData/Utrecht/TIFFS/7/
 
 
 out_location:
