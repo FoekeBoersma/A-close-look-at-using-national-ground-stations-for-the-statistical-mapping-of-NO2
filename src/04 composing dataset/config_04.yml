@@ -9,10 +9,13 @@ input_data:
   polygonbuilding_studyArea: data/input/BuildingDensity/polygonbuilding_studyArea.shp
   polygonbuilding_DNL: data/input/TooBigData/polygonbuildings_DNL.shp
   grid_bldden_bayreuth: data/output/04 composing dataset/grid_bldden_100m_bayreuth.shp
+  grid_bldden_hamburg: data/output/04 composing dataset/grid_bldden_100m_hamburg.shp
+
   
 tifs:
   tifs5: data/input/5TIFs/
   tifs5_bayreuth: data/input/TooBigData/Bayreuth/TIFFS/8/
+  tifs5_hamburg: data/input/TooBigData/Hamburg/TIFFS/1/
 
 
 out_location:
@@ -20,5 +23,6 @@ out_location:
 
 out_files:
   bayreuth_100mgrid: 'Cen100_GlobalPredictors-Bayreuth.gpkg'
+  hamburg_100mgrid: 'Cen100_GlobalPredictors_Hamburg.gpkg'
   bayreuth_100mgrid_csv: 'grid100_GlobalPredictors-Bayreuth.csv'
   
