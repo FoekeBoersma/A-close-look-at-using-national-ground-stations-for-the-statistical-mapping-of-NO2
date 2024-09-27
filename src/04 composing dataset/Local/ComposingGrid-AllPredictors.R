@@ -1,38 +1,30 @@
-#create 100m grid with predictors
-
-#import necessary libraries
-require(rgdal)
+# Load necessary libraries
+library(sf)
 library(raster)
-require(sf)
 library(ggplot2)
-library(raster)
 library(rgeos)
 library(tidyverse)
-library(sp) #spatial operations
-library(leaflet) #mapping in OSM
-library(terra) #rasterize
-library(stars) #necessary for st_rasterize
+library(sp)
+library(leaflet)
+library(terra)
+library(stars)
 library(dplyr)
+library(yaml)
+library(rgdal)
+library(nngeo)     # For finding nearest features
 
-#connect to yaml file
+# Connect to YAML configuration file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
-# Move one level up in the directory
 config_dir <- dirname(dirname(current_dir))
-# Construct the path to the YAML configuration file
 config_path <- file.path(config_dir, "config_04.yml")
+config <- yaml::yaml.load_file(config_path)
 
-# Read the YAML configuration file
-config <- yaml.load_file(config_path)
-
-# Use dirname() to get the parent directory
+# Define output path
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
 amsterdam100m_grid <- config$input_data$amsterdam100m_grid
 amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, amsterdam100m_grid ), winslash = "/")
-
-## == define output path == ##
-out_location <- config$out_location
-out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
 
 ## == IMPORT GEODATA == ##
 
