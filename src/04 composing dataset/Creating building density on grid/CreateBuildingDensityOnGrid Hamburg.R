@@ -25,8 +25,8 @@ out_location_dir <- normalizePath(file.path(parent_directory, config$out_locatio
 
 # IMPORT GEODATA
 # Import area of interest at 100m resolution
-bayreuth100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$bayreuth100m_grid), winslash = "/")
-grid <- readOGR(bayreuth100m_grid_dir)
+hamburg100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$hamburg100m_grid), winslash = "/")
+grid <- readOGR(hamburg100m_grid_dir)
 
 # Data processing
 grid_sf <- st_as_sf(grid)  # Convert grid to sf object
@@ -38,17 +38,14 @@ grid_centroids_sf <- st_as_sf(grid_centroids)  # Convert to sf object
 grid_centroids_sf$cenID <- seq(1, nrow(grid_centroids_sf))  # Assign unique ID
 grid_centroids_3035 <- st_transform(grid_centroids_sf, crs = 3035)  # Project to planar coordinate system
 
-# Create buffers around centroids (100m radius)
+# Step 1: Create buffers around centroids (100m radius)
 centroid_layer <- st_buffer(grid_centroids_3035, dist = 100)  # 100m buffer
+
 # Load buildings data
 buildings_path <- normalizePath(file.path(parent_directory, config$input_data$polygonbuilding_DNL), winslash = "/")
 buildings <- st_read(buildings_path)  # Load the buildings shapefile
 buildings_3035 <- st_transform(buildings, crs = 3035)  # Ensure same projection as grid and centroids
-
-# Clip buildings by each centroid's buffer (spatial join)
 buildings_in_buffer <- st_intersection(buildings_3035, centroid_layer)  # Find buildings inside each buffer
-
-# Calculate the area of the buildings within each buffer
 buildings_in_buffer$building_area <- st_area(buildings_in_buffer)  # Calculate building areas
 
 # Group by centroid ID and sum the building areas
@@ -67,10 +64,9 @@ grid_centroids_df <- grid_centroids_df %>%
 
 # Replace NA values (for buffers with no buildings) with 0
 grid_centroids_df$bld_den100m[is.na(grid_centroids_df$bld_den100m)] <- 0
-
 grid_sf <- st_as_sf(grid_centroids_df)
 
-# Save the result as a shapefile
-output_shapefile_path <- file.path(out_location_dir, 'grid_bldden_100m_bayreuth.shp')
+#  Save the result as a shapefile
+output_shapefile_path <- file.path(out_location_dir, 'grid_bldden_100m_hamburg.shp')
 sf::st_write(grid_sf, dsn = output_shapefile_path, driver = "ESRI Shapefile")
 

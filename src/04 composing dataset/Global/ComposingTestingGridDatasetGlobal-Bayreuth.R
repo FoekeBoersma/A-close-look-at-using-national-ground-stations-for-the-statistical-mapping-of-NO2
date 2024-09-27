@@ -42,14 +42,11 @@ grid_centroids_3035 <- st_transform(grid_centroids_sf, crs = 3035)  # Project to
 tifs5_dir <- normalizePath(file.path(parent_directory, config$tifs$tifs5_bayreuth), winslash = "/")
 rlist <- list.files(path = tifs5_dir, pattern = '.tif$', ignore.case = TRUE, full.names = FALSE)
 
-
-
 for (i in rlist) {
   # Construct the full file path
   full_file_path <- file.path(tifs5_dir, i)  # Combine directory and file name
 
   # Extract the name without extension
-  # var_name <- tools::file_path_sans_ext(basename(i))
   var_name <- gsub("^Bayreuth_", "", tools::file_path_sans_ext(basename(i)))
   # Load the raster and assign it to a variable dynamically
   assign(var_name, raster(full_file_path))  # Use the full file path

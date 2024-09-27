@@ -1,6 +1,7 @@
 input_data:
   amsterdam100m_grid:  data/input/TooBigData/Amsterdam/grid100Amsterdam.shp
   bayreuth100m_grid:  data/input/TooBigData/Bayreuth/grid100Bayreuth.gpkg
+  hamburg100m_grid:  data/input/TooBigData/Hamburg/grid100Hamburg.gpkg
   ndvi_map: data/input/NDVI/
   traffic_volume_study_area: data/input/Traffic/TrafficVolume_StudyArea.shp
   modeling_dataset_local_processed: data/input/LocalModelData/ModellingDataset-Local-processed.csv
