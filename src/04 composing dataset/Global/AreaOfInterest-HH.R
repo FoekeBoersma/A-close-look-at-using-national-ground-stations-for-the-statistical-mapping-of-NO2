@@ -1,42 +1,23 @@
-#necessary libraries
+# Load required libraries
 library(sf)
-library(sfnetworks)
-library(tidygraph)
-library(tmap)
-library(nngeo)
 library(osmdata)
 library(dplyr)
-library(lwgeom)
-library(raster)
+library(tmap)
+library(leaflet)
 library(rgdal)
-library(utils)
-library(ggplot2)
-library(rgeos)
-library(tidyverse)
-library(leaflet) #mapping in OSM
-library(bnspatial)
-library(gstat)
-library(geosphere) #geosphere::dist2Line
-library(stars) #for st_rasterize
-library(base) #sprintf
+library(stars)
 
-#connect to yaml file
+# Connect to YAML file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
-# Move one level up in the directory
 config_dir <- dirname(dirname(current_dir))
-# Construct the path to the YAML configuration file
 config_path <- file.path(config_dir, "config_04.yml")
-# Read the YAML configuration file
-config <- yaml.load_file(config_path)
+config <- yaml::yaml.load_file(config_path)
 
-# Use dirname() to get the parent directory
+# Define output path
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
-## == define output path == ##
-out_location <- config_04$out_location
-out_location_dir <- normalizePath(file.path(parent_directory, out_location ), winslash = "/")
-
-## == intialize coordinates - area of interest == ##
+## == intialize coordinates - area of interest (Hamburg) == ##
 coor_1 = 9.7668
 coor_3 = 10.2228
 coor_2 = 53.3948 
@@ -50,23 +31,19 @@ y_coord = c(coor_4, coor_2, coor_2, coor_4)
 xym <- cbind(x_coord, y_coord)
 
 #transform into spatial polygon
-p = Polygon(xym) #create polygon
-ps = Polygons(list(p),1) #wrap into a Polygons object
-poly = SpatialPolygons(list(ps)) #wrap into a SpatialPolygons object
+polygon = Polygon(xym) #create polygon
+polygons = Polygons(list(polygon),1) #wrap into a Polygons object
+spatial_polygon = SpatialPolygons(list(polygons)) #wrap into a SpatialPolygons object
+proj4string(spatial_polygon) = CRS("+proj=longlat +datum=WGS84 +no_defs +type=crs")
 
-proj4string(poly) = CRS("+proj=longlat +datum=WGS84 +no_defs +type=crs")
-
-#export option
-poly_sf <- st_as_sf(poly)
-class(poly_sf)
-#sf::st_write(poly_sf, dsn=out_location_dir +'/polyHamburg.gpkg', driver = "GPKG")
+# Convert to sf object
+polygon_sf <- st_as_sf(spatial_polygon)
 
 ## == make grid == ##
 
 ##  First project data into a planar coordinate system (here 3035 - Lambert Azimuthal Equal Area projection)
-poly_3035 <- st_transform(poly_sf, crs=3035)
-
-grid <- st_make_grid(poly_3035, cellsize=100)
+polygon_3035 <- st_transform(polygon_sf, crs=3035)
+grid_Hamburg <- st_make_grid(polygon_3035, cellsize=100)
 
 #export option
-sf::st_write(grid, dsn=out_location_dir +'/grid100Hamburg.gpkg', driver = "GPKG")
+sf::st_write(grid_Hamburg, dsn=file.path(out_location_dir,'grid100Hamburg.gpkg'), driver = "GPKG")

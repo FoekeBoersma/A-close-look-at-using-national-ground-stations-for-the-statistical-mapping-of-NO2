@@ -25,8 +25,8 @@ out_location_dir <- normalizePath(file.path(parent_directory, config$out_locatio
 
 # IMPORT GEODATA
 # Import area of interest at 100m resolution
-hamburg100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$hamburg100m_grid), winslash = "/")
-grid <- readOGR(hamburg100m_grid_dir)
+utrecht100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$utrecht100m_grid), winslash = "/")
+grid <- readOGR(utrecht100m_grid_dir)
 
 # Data processing
 grid_sf <- st_as_sf(grid)  # Convert grid to sf object
@@ -37,9 +37,9 @@ grid_centroids_sf$cenID <- seq(1, nrow(grid_centroids_sf))  # Assign unique ID
 grid_centroids_df <- as.data.frame(grid_centroids_sf)
 grid_centroids_3035 <- st_transform(grid_centroids_sf, crs = 3035)  # Project to planar coordinate system
 
-# PREDICTORS 5 (hamburg) GLOBAL DATASET
+# PREDICTORS 5 (utrecht) GLOBAL DATASET
 # Import all files in a folder as a list
-tifs5_dir <- normalizePath(file.path(parent_directory, config$tifs$tifs5_hamburg), winslash = "/")
+tifs5_dir <- normalizePath(file.path(parent_directory, config$tifs$tifs5_utrecht), winslash = "/")
 rlist <- list.files(path = tifs5_dir, pattern = '.tif$', ignore.case = TRUE, full.names = FALSE)
 
 for (i in rlist) {
@@ -47,7 +47,7 @@ for (i in rlist) {
   full_file_path <- file.path(tifs5_dir, i)  # Combine directory and file name
 
   # Extract the name without extension
-  var_name <- gsub("^Hamburg_", "", tools::file_path_sans_ext(basename(i)))
+  var_name <- gsub("^Utrecht_", "", tools::file_path_sans_ext(basename(i)))
   # Load the raster and assign it to a variable dynamically
   assign(var_name, raster(full_file_path))  # Use the full file path
 }
@@ -69,8 +69,8 @@ for (i in seq_along(predictors)) {
   
   # Convert to dataframe
   centroid_pred_df <- as.data.frame(centroid_pred)
-  # Remove the "hamburg_" prefix from the column names
-  names(centroid_pred_df) <- gsub("^Hamburg_", "", names(centroid_pred_df))
+  # Remove the "utrecht_" prefix from the column names
+  names(centroid_pred_df) <- gsub("^Utrecht_", "", names(centroid_pred_df))
   centroid_predictors[[prednames[[i]]]] <- centroid_pred_df
 }
 
@@ -90,7 +90,7 @@ centroids_5predictors <- centroids_5predictors %>%
                 trop_mean_filt)
 
 # BUILDING DENSITY
-grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_hamburg)
+grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_utrecht)
 dis <- readOGR(grid_bldden_100m_path )
 dis_BldDen <- as.data.frame(dis)
 
@@ -157,7 +157,7 @@ Cen100_GlobalPredictors_wgs <- st_transform(Cen100_GlobalPredictors, crs = 4326)
          Latitude = unlist(map(geometry, 2)))
 
 # EXPORT OPTIONS
-sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_Hamburg.gpkg"), driver = "GPKG", overwrite=TRUE)
+sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_utrecht.gpkg"), driver = "GPKG", overwrite=TRUE)
 
 write.csv(Cen100_GlobalPredictors_wgs %>% dplyr::select(-geometry), 
-          file.path(out_location_dir, "Cen100_GlobalPredictors_Hamburg.csv"))
+          file.path(out_location_dir, "Cen100_GlobalPredictors_utrecht.csv"))
