@@ -1,107 +1,120 @@
-## == Necessary packages == ##
+## == Necessary Packages == ##
 
-# We will need some packages for (spatial) data processing
-library(tidyverse) # wrangling tabular data and plotting
-library(sf) # processing spatial vector data - the easy way
-library(sp) # processing spatial vector data - the way gstat needs it
-library(raster) # processing spatial raster data. !!!overwrites dplyr::select!!!
-library(rgdal) #import shapefiles
-library(rgeos) #contains gCentroid
-library(tidyr) #geometry to apart long/lat
-library(dismo) #for kfold
-library(lme4) #for mixed models (random effects)
-library(stats) #quantile
-library(nlme) #mixed-effect model
-library('parallel') 
-# Packages for geostatistics
-library(gstat)   # The most popular R-Package for Kriging 
-library(automap) # Automatize some (or all) parts of the gstat-workflow 
+# Define required packages
+required_packages <- c("tidyverse", "sf", "sp", "raster", "rgdal", "rgeos", 
+                       "tidyr", "dismo", "lme4", "stats", "nlme", 
+                       "parallel", "gstat", "automap", "yaml")
 
-## == DEFINE COORDINATE SYSTEMS == ##
+# Load or install missing packages using lapply
+lapply(required_packages, function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg)
+    library(pkg, character.only = TRUE)
+  }
+})
 
-#CRS with metric system is preferred (=3035).
-crs <- CRS("+proj=longlat +datum=WGS84") # crs
+## == Connect to YAML Configuration File == ##
 
-## == import geodata == ##
+# Get the current script's directory
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir))  # Move one level up in directory
+config_path <- file.path(config_dir, "config_06.yml")
 
-data <- read.csv('/data/LocalModelData/PredictingDataset.csv', sep=',')
-#replace NA with 0
+# Load the YAML configuration file
+config <- yaml::yaml.load_file(config_path)
+
+# Define parent directory (four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
+
+## == Define Coordinate Systems == ##
+
+# Define CRS with metric system (ETRS89 / ETRS-LAEA = EPSG:3035)
+crs <- CRS("+proj=longlat +datum=WGS84")  # For initial use
+
+## == Import Geodata == ##
+
+# Load data from CSV file specified in the YAML configuration
+data <- read.csv(config$input_data$local_dataset, sep = ',')
+
+# Replace NA values with 0
 data[is.na(data)] <- 0
 
-#make imported csv spatial
+# Convert the imported CSV to a spatial (sf) object
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
 
-#to sf
-data_sf = st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
-#change to planar crs
-data_3035 <- st_transform(data_sf,crs=3035)
+# Reproject data to the planar CRS (EPSG:3035)
+data_3035 <- st_transform(data_sf, crs = 3035)
 
-#import grid where predictions will be projected on
-grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+# Import grid where predictions will be projected
+grid100 <- readOGR(config$input_data$local_predictors_amsterdam)
 
-#make spatial - obtain the geometry for each sample
+# Convert the imported grid to an sf object
 grid100_sf <- st_as_sf(grid100)
-#make key qith unique fid that will be used for joining all local datasets and related predictions
-grid100_sf$key = seq(1,nrow(grid100_sf))
 
-## == modelling == ##
+# Create a unique key for each grid cell for future joining
+grid100_sf$key <- seq(1, nrow(grid100_sf))
 
-## == Kriging - variogram setting == ##
+## == Modelling == ##
 
-#now to spatial points dataframe
+### == Kriging - Variogram Setup == ###
+
+# Convert the spatial data (sf) back to a Spatial object
 data_sp <- as(data_3035, "Spatial")
 
-# define grid for projection 
-
-# = create grid where kriging needs to be projected on = #
-
+# Create centroids from the grid geometry to define the projection grid
 grid100_centroids <- st_centroid(grid100_sf)
 
+# Get the bounding box of the grid centroids
 bbox <- st_bbox(grid100_centroids)
 
-grid <- grid100_centroids %>% 
-  st_bbox() %>%     # determines bounding box coordinates from meuse
-  st_as_sfc() %>%   # creates sfc object from bounding box
-  st_make_grid(     # create grid 100m x 100m pixel size
-    cellsize = c(100, 100), 
-    what = "corners") %>%
-  st_as_sf(crs=st_crs(data_3035)) # convert to sf object
+# Generate a 100m x 100m grid for kriging projections
+grid <- grid100_centroids %>%
+  st_bbox() %>%
+  st_as_sfc() %>%
+  st_make_grid(cellsize = c(100, 100), what = "corners") %>%
+  st_as_sf(crs = st_crs(data_3035))
 
-# Convert grid to SpatialPixelsDataFrame, the raster/grid equivalent in 
-# in the sp world
+# Convert the grid to a SpatialPixelsDataFrame for kriging
 grid_sp <- as(as(grid, "Spatial"), "SpatialPixels")
 
-#define x & y variables to coordinates
+# Extract x and y coordinates from the spatial object
 data_xy <- data.frame(x = data_sp$coords.x1, y = data_sp$coords.x2)
-coordinates(data_xy) = ~x+y
+coordinates(data_xy) <- ~x + y
 
-#variogram
+# Fit variogram using the autofit function, based on dependent variable 'Lopend_gemiddelde'
+variogram_auto_lin <- autofitVariogram(Lopend_gemiddelde ~ 1, data_sp)
 
-#perform autofit variogram, based on dependent variable 'Lopend_gemiddelde'
-variogram_auto_lin = autofitVariogram(Lopend_gemiddelde ~ 1, data_sp)
-
+# Plot the fitted variogram
 plot(variogram_auto_lin)
 
-autofit_params_lin <- variogram_auto_lin$var_model 
-
-#examine suggested variogram paramater settings via print function
+# Extract suggested variogram parameter settings
+autofit_params_lin <- variogram_auto_lin$var_model
 print(autofit_params_lin)
 
-#manually insert variogram settings, based on autofit
-m <- vgm(psill = 80.16775, "Ste", range = 10000)
+# Manually define the variogram model based on autofit parameters
+m <- vgm(psill = 80.16775, model = "Ste", range = 10000)
 
-OK<-krige(Lopend_gemiddelde~1, 
-          loc= data_sp,        # Data frame
-          newdata=grid_sp,      # Prediction grid
-          model = m)       # fitted varigram model
+# Perform Ordinary Kriging (OK) using the fitted variogram model
+OK <- krige(Lopend_gemiddelde ~ 1, 
+            loc = data_sp,      # Data to interpolate
+            newdata = grid_sp,  # Prediction grid
+            model = m)          # Fitted variogram model
 
-
+# Convert the kriging results to an sf object
 OK_sf <- st_as_sf(OK)
 
-OK_sf <- OK_sf %>%rename(predicted_OK = var1.pred, 
-                   variance_OK = var1.var)
+# Rename the kriging result columns for clarity
+OK_sf <- OK_sf %>%
+  rename(predicted_OK = var1.pred, variance_OK = var1.var)
+
 print(OK_sf)
 
+# Join the kriging predictions back to the grid geometry
 OK_grid <- st_join(grid100_sf, OK_sf)
 
-## == export option == ##
-sf::st_write(OK_grid, dsn="/TooBigData/LocalModels/predictedNO2_OK.gpkg", driver = "GPKG")
+## == Export Output == ##
+
+# Export the kriging results to a GeoPackage (GPKG) format
+sf::st_write(OK_grid, dsn = file.path(out_location_dir, "predictedNO2_OK.gpkg"), driver = "GPKG")

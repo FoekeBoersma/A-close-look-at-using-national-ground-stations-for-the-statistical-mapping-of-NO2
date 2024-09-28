@@ -23,7 +23,18 @@ library(patchwork)
 library(viridis)
 library(tmap)
 library(graphics) #for text
+library(yaml)
 
+
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config_path <- file.path(config_dir, "config_06.yml")
+config <- yaml::yaml.load_file(config_path)
+
+# Define the parent directory (four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
 ## == DEFINE COORDINATE SYSTEMS == ##
 
@@ -32,7 +43,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv(config$input_data$local_modeling_dataset, sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -50,7 +61,7 @@ data_3035 <- as(data_3035, 'Spatial')
 
 # define grid for projection 
 # import AOI
-grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR(config$input_data$local_predictors_amsterdam)
 
 #convert to sf to use function "rename"
 grid100 <- st_as_sf(grid100)
@@ -160,9 +171,9 @@ FFR_grid100_sf <- st_as_sf(FFR_grid100)
 
 # export options - spatial distributions
 #shp - grid
-# sf::st_write(Urb_grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Amsterdam/Urban_100grid.gpkg", driver = "GPKG")
-# sf::st_write(Lowpop_grid100_sf, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Amsterdam/Lowpop_grid100.gpkg", driver = "GPKG")
-# sf::st_write(FFR_grid100, dsn="C:/Users/foeke/OneDrive/Documenten/april onwards/2022/Initial dataset/ForPredicting/Grid100/Amsterdam/FFR_grid100.gpkg", driver = "GPKG")
+# sf::st_write(Urb_grid100_sf, dsn="/Grid100/Amsterdam/Urban_100grid.gpkg", driver = "GPKG")
+# sf::st_write(Lowpop_grid100_sf, dsn="/Grid100/Amsterdam/Lowpop_grid100.gpkg", driver = "GPKG")
+# sf::st_write(FFR_grid100, dsn="/Grid100/Amsterdam/FFR_grid100.gpkg", driver = "GPKG")
 
 ### ===  kriging per spatial character === ###
 
@@ -521,7 +532,7 @@ cen100_UK_values_overlay_join <- cen100_UK_values_overlay_join %>% rename(predNO
 #convert NA to 0's
 cen100_UK_values_overlay_join[is.na(cen100_UK_values_overlay_join)] <- 0
 
-sf::st_write(cen100_UK_values_overlay_join, dsn="/TooBigData/LocalModels/test_3035/predictedNO2_UK_SeparatingSpatialGroups.gpkg", driver = "GPKG")
+sf::st_write(cen100_UK_values_overlay_join, dsn=file.path(out_location_dir,"predictedNO2_UK_SeparatingSpatialGroups.gpkg"), driver = "GPKG")
 
 #export option - to csv
 #write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')

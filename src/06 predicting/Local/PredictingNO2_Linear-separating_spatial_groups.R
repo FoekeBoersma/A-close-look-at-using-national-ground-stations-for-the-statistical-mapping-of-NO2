@@ -1,164 +1,141 @@
 ## == Necessary packages == ##
 
-# We will need some packages for (spatial) data processing
-library(tidyverse) # wrangling tabular data and plotting
-library(sf) # processing spatial vector data - the easy way
-library(sp) # processing spatial vector data - the way gstat needs it
-library(raster) # processing spatial raster data. !!!overwrites dplyr::select!!!
-library(rgdal) #import shapefiles
-library(rgeos) #contains gCentroid
-library(tidyr) #geometry to apart long/lat
-library(dismo) #for kfold
-library(lme4) #for mixed models (random effects)
-library(stats) #quantile
-library(nlme) #mixed-effect model
-library('parallel') 
-# Packages for geostatistics
-library(gstat)   # The most popular R-Package for Kriging 
-library(automap) # Automatize some (or all) parts of the gstat-workflow 
+# Load required packages using lapply for cleaner syntax
+packages <- c("tidyverse", "sf", "sp", "raster", "rgdal", "rgeos", "tidyr", 
+              "dismo", "lme4", "stats", "nlme", "parallel", "gstat", 
+              "automap", "yaml")
 
-## == DEFINE COORDINATE SYSTEMS == ##
+lapply(packages, library, character.only = TRUE)
 
-#CRS with metric system is preferred (=3035).
+## == Connect to YAML Configuration File == ##
 
-crs <- CRS("+proj=longlat +datum=WGS84") # crs
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config_path <- file.path(config_dir, "config_06.yml")
+config <- yaml::yaml.load_file(config_path)
 
-## == import geodata == ##
+# Define the parent directory (four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
-#all variables are necessary for spatial grouping determination
-data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
-#replace NA with 0
-data[is.na(data)] <- 0
+## == Define Coordinate Systems == ##
 
-#make imported csv spatial
+# CRS with metric system is preferred (EPSG: 3035)
+crs <- CRS("+proj=longlat +datum=WGS84")
 
-#to sf
-data_sf = st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
-#change to planar crs
-data_3035 <- st_transform(data_sf,crs=3035)
+## == Import Geodata == ##
 
-#import grid where predictions will be projected on
-grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+data <- read.csv(config$input_data$local_modeling_dataset, sep = ';')
+data[is.na(data)] <- 0  # Replace NA values with 0
 
-#make spatial - obtain the geometry for each sample
+# Convert to spatial data frame (sf)
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+data_3035 <- st_transform(data_sf, crs = 3035)  # Transform to planar CRS (3035)
+
+# Import grid for prediction
+grid100 <- readOGR(config$input_data$local_predictors_amsterdam)
 grid100_sf <- st_as_sf(grid100)
 
-## == create column relating to spatial characterization (e.g. distance to road/population) == ##
+## == Spatial Characterization == ##
 
-#add a column to the data_3035 describing the spatial group where each sample belongs to
+# Calculate quantiles for grouping
+population1000_05 <- quantile(data_3035$population_1000, 0.5)
+roadclass3_100_05 <- quantile(data_3035$road_class_3_100, 0.5)
 
-#examine basic data statistics of variables that will be used for quantile filtering!
-quantile(data_3035$road_class_3_100)
-quantile(data_3035$population_1000)
+# Use case_when for clearer logic in spatial group assignment
+data_3035 <- data_3035 %>%
+  mutate(spachar = case_when(
+    population_1000 > population1000_05 & 
+      ((road_class_2_100 > 0 | road_class_1_100 > 0) | road_class_3_100 > roadclass3_100_05) ~ 1,
+    population_1000 < population1000_05 & 
+      ((road_class_2_100 > 0 | road_class_1_100 > 0) | road_class_3_100 > roadclass3_100_05) ~ 2,
+    TRUE ~ 3
+  ))
 
-#spatial character: group "urban" - higher than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-data_3035$spachar = ifelse(data_3035$population_1000 > quantile(data_3035$population_1000, 0.5) & ((data_3035$road_class_2_100 > 0 | data_3035$road_class_1_100 > 0) | data_3035$road_class_3_100 > quantile(data_3035$road_class_3_100, 0.5)), 1, 0)
+# Apply the same grouping logic to grid data
+grid100_sf <- grid100_sf %>%
+  mutate(spachar = case_when(
+    population_1000 > population1000_05 & 
+      ((road_class_2_100 > 0 | road_class_1_100 > 0) | road_class_3_100 > roadclass3_100_05) ~ 1,
+    population_1000 < population1000_05 & 
+      ((road_class_2_100 > 0 | road_class_1_100 > 0) | road_class_3_100 > roadclass3_100_05) ~ 2,
+    TRUE ~ 3
+  ))
 
-#spatial character: group "low population" - lower than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-data_3035$spachar = ifelse(data_3035$population_1000 < quantile(data_3035$population_1000, 0.5) & ((data_3035$road_class_2_100 > 0 | data_3035$road_class_1_100 > 0) | data_3035$road_class_3_100 > quantile(data_3035$road_class_3_100, 0.5)), 2, data_3035$spachar)
+## == Key Generation for Grid == ##
 
-#spatial character: group "far from road" - all other samples (i.e. further away than 100m from road class 1/2 OR lower than .5 quantile of road class 3 100)
-data_3035$spachar = ifelse((data_3035$spachar == 1 | data_3035$spachar == 2), data_3035$spachar, 3)
+# Add unique key to each row
+grid100_sf$key <- seq(1, nrow(grid100_sf))
 
-#examine thresholds for each variable-criterium, per spatial group
-print(quantile(data_3035$population_1000, 0.5))
-print(quantile(data_3035$road_class_3_100, 0.5))
+# Split into subsets based on spatial group
+Urb_grid100_sf <- filter(grid100_sf, spachar == 1)
+Lowpop_grid100_sf <- filter(grid100_sf, spachar == 2)
+FFR_grid100_sf <- filter(grid100_sf, spachar == 3)
 
-#add a column to the 100m grid describing the spatial group where each sample belongs to
-
-#assign to variable
-population1000_05 = as.vector(quantile(data_3035$population_1000, 0.5))
-roadclass3_100_05 = as.vector(quantile(data_3035$road_class_3_100, 0.5)) #as.vector necessary to only obtain value
-
-#spatial character: group "urban" - higher than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-grid100_sf$spachar = ifelse(grid100_sf$population_1000 > population1000_05 & ((grid100_sf$road_class_2_100 > 0 | grid100_sf$road_class_1_100 > 0) | grid100_sf$road_class_3_100 > roadclass3_100_05), 1, 0)
-
-#spatial character: group "low population" - lower than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-grid100_sf$spachar = ifelse(grid100_sf$population_1000 < population1000_05 & ((grid100_sf$road_class_2_100 > 0 | grid100_sf$road_class_1_100 > 0) | grid100_sf$road_class_3_100 > roadclass3_100_05), 2, grid100_sf$spachar)
-
-#spatial character: group "far from road" - all other samples (i.e. further away than 100m from road class 1/2 OR lower than .5 quantile of road class 3 100)
-grid100_sf$spachar = ifelse((grid100_sf$spachar == 1 | grid100_sf$spachar == 2), grid100_sf$spachar, 3)
-
-#make key qith unique fid that will be used for joining all subdata after data processing
-grid100_sf$key = seq(1,nrow(grid100_sf))
-#based on column spachar
-Urb_grid100_sf <- grid100_sf[grid100_sf$spachar == 1, ]
-Lowpop_grid100_sf <- grid100_sf[grid100_sf$spachar == 2, ]
-FFR_grid100_sf <- grid100_sf[grid100_sf$spachar == 3, ]
-
-#convert to sf
+# Convert to sf objects
 Urb_grid100_sf <- st_as_sf(Urb_grid100_sf)
 Lowpop_grid100_sf <- st_as_sf(Lowpop_grid100_sf)
 FFR_grid100_sf <- st_as_sf(FFR_grid100_sf)
 
-### === linear modelling per spatial group === ###
+## == Linear Modeling Per Spatial Group == ##
 
-#create different datasets, based on the spatial character
-Urban <- data_3035[data_3035$spachar == 1, ]
-Lowpopulation <- data_3035[data_3035$spachar == 2, ]
-FarFromRoad <- data_3035[data_3035$spachar == 3, ]
+# Subset data based on spatial character
+Urban <- filter(data_3035, spachar == 1)
+Lowpopulation <- filter(data_3035, spachar == 2)
+FarFromRoad <- filter(data_3035, spachar == 3)
 
-#shp - grid
-#sf::st_write(Urb_grid100_sf, dsn="/TooBigData/LocalModels/Urban_100grid_1.gpkg", driver = "GPKG")
-#sf::st_write(Lowpop_grid100_sf, dsn="/TooBigData/LocalModels/Lowpop_grid100_2.gpkg", driver = "GPKG")
-#sf::st_write(FFR_grid100_sf, dsn="/TooBigData/LocalModels/Amsterdam/FFR_grid100_1.gpkg", driver = "GPKG")
+# Common formula for all models
+model_formula <- Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 +
+                 road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + 
+                 road_class_3_100 + road_class_3_300 + trafBuf50
 
-## == Urban - linear modeling == ##
+# Train linear models
+linear_urb <- lm(model_formula, data = Urban)
+linear_lp <- lm(model_formula, data = Lowpopulation)
+linear_ffr <- lm(model_formula, data = FarFromRoad)
 
-#train model based on urban samples (=56)
-linear_urb= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Urban)
-#predicting based on the trained model - predict on grid cells that have the spachar value "1" (urban grid)
+# Predict and handle missing values
 Urb_grid100_sf$pred_urb <- predict(linear_urb, Urb_grid100_sf)
-#convert NA to 0's
-Urb_grid100_sf[is.na(Urb_grid100_sf)] <- 0
-URB_select = Urb_grid100_sf[,c('key', 'pred_urb')]
-
-## == Low population - linear modelling == ##
-
-#train model based on low population samples (=46)
-linear_lp= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Lowpopulation)
-#predicting based on the trained model - predict on grid cells that have the spachar value "2" (low population grid)
 Lowpop_grid100_sf$pred_lp <- predict(linear_lp, Lowpop_grid100_sf)
-#convert NA to 0's
-Lowpop_grid100_sf[is.na(Lowpop_grid100_sf)] <- 0
-LP_select = Lowpop_grid100_sf[,c('key', 'pred_lp')]
-
-## == Far From Road - Linear model == ##
-
-#train model based on far from road samples (=30)
-linear_ffr= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=FarFromRoad)
-#predicting based on the trained model - predict on grid cells that have the spachar value "3" (far from road grid)
 FFR_grid100_sf$pred_ffr <- predict(linear_ffr, FFR_grid100_sf)
-# predictions_urban <- predictions_urban %>% rename(predictions_urban = "var1.pred")
-#convert NA to 0's
+
+# Convert NA values to 0
+Urb_grid100_sf[is.na(Urb_grid100_sf)] <- 0
+Lowpop_grid100_sf[is.na(Lowpop_grid100_sf)] <- 0
 FFR_grid100_sf[is.na(FFR_grid100_sf)] <- 0
-#select only relevant columns to join with grid100
-FFR_select = FFR_grid100_sf[,c('key', 'pred_ffr')]
 
-FFR_select
+# Select necessary columns for joining
+URB_select <- Urb_grid100_sf %>% dplyr::select(key, pred_urb)
+LP_select <- Lowpop_grid100_sf %>% dplyr::select(key, pred_lp)
+FFR_select <- FFR_grid100_sf %>% dplyr::select(key, pred_ffr)
 
-## == join different prediction dataset (derived from each spatial group) == ##
+## == Join Prediction Datasets == ##
 
-grid100 <- as.data.frame(grid100)
+# Convert to data frame for merging
+grid100 <- as.data.frame(grid100_sf)
 URB_select <- as.data.frame(URB_select)
 LP_select <- as.data.frame(LP_select)
 FFR_select <- as.data.frame(FFR_select)
 
-merge = list(grid100_sf, URB_select, LP_select, FFR_select)
-merge <- merge %>% reduce(full_join, by= 'key')
-merge <- replace(merge, is.na(merge), 0)
+# Merge prediction datasets
+merge <- list(grid100_sf, URB_select, LP_select, FFR_select) %>%
+  reduce(full_join, by = 'key') %>%
+  replace(is.na(.), 0)
 
-#define final prediction column by adding up prediction columns per spatial group
+# Final prediction column
 merge$predNO2_LinSep <- merge$pred_urb + merge$pred_lp + merge$pred_ffr
 
-colnames(merge)
+# Select relevant columns
+merge <- merge %>%
+  dplyr::select(nightlight_450, nightlight_4950, population_1000, population_3000, road_class_1_5000,
+         road_class_2_100, road_class_2_1000, road_class_1_100, road_class_2_5000,
+         road_class_3_100, road_class_3_300, trafBuf50, spachar, key, pred_urb, pred_lp, 
+         pred_ffr, geometry.x, predNO2_LinSep)
 
-merge <- merge[,c("nightlight_450" ,"nightlight_4950" ,"population_1000","population_3000" ,"road_class_1_5000","road_class_2_100" ,
-"road_class_2_1000","road_class_1_100" ,"road_class_2_5000","road_class_3_100","road_class_3_300" ,"trafBuf50" ,"spachar", "key","pred_urb", "pred_lp",    
-"pred_ffr","geometry.x","predNO2_LinSep")]
-
-#make spatial
+# Convert to sf object
 merge_sf <- st_as_sf(merge)
 
-## == export option == ##
-sf::st_write(merge_sf, dsn="/TooBigData/LocalModels/predictedNO2_Linear_SeparatingSpatialGroups.gpkg", driver = "GPKG")
+## == Export == ##
+
+sf::st_write(merge_sf, dsn = file.path(out_location_dir, "predictedNO2_Linear_SeparatingSpatialGroups.gpkg"), driver = "GPKG")

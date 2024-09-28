@@ -10,5 +10,12 @@ input_data:
   utrecht_predicting_no2_allmodels: data/input//TooBigData/Utrecht/Predicting NO2-AllModelsUtrecht100_xy.csv
 
 
+  local_modeling_dataset: data/input/LocalModelData/ModellingDataset-Local.csv #including predictions to make spatial groups (urban, suburban, rural)
+  local_dataset: data/input/LocalModelData/PredictingDataset.csv
+
+  local_predictors_amsterdam: data/input/TooBigData/Amsterdam/Grid100_LocalPredictors_Amsterdam.gpkg
+
+
+
 out_location:
   data/output/06 predicting/
