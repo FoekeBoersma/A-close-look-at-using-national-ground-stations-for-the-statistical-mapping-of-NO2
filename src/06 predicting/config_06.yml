@@ -1,6 +1,20 @@
 input_data:
   amsterdam100m_grid:  data/input/TooBigData/Amsterdam/grid100Amsterdam.shp
   amsterdam_predicting_no2_allmodels: data/input/TooBigData/Amsterdam/Predicting NO2-AllModelsAmsterdam100_xy.csv
+  
+  bayreuth100m_grid:  data/input/TooBigData/Bayreuth/grid100Bayreuth.gpkg
+  bayreuth_predicting_no2_allmodels: data/input//TooBigData/Bayreuth/Predicting NO2-AllModelsBayreuth100_xy.csv
+  hamburg100m_grid:  data/input/TooBigData/Hamburg/grid100Hamburg.gpkg
+  hamburg_predicting_no2_allmodels: data/input//TooBigData/Hamburg/Predicting NO2-AllModelsHamburg100_xy.csv
+  utrecht100m_grid:  data/input/TooBigData/Utrecht/grid100Utrecht.gpkg
+  utrecht_predicting_no2_allmodels: data/input//TooBigData/Utrecht/Predicting NO2-AllModelsUtrecht100_xy.csv
+
+
+  local_modeling_dataset: data/input/LocalModelData/ModellingDataset-Local.csv #including predictions to make spatial groups (urban, suburban, rural)
+  local_dataset: data/input/LocalModelData/PredictingDataset.csv
+
+  local_predictors_amsterdam: data/input/TooBigData/Amsterdam/Grid100_LocalPredictors_Amsterdam.gpkg
+
 
 
 out_location:

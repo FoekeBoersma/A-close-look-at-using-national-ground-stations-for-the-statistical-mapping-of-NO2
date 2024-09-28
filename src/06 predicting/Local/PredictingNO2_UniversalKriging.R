@@ -13,16 +13,26 @@ library(lme4) #for mixed models (random effects)
 library(stats) #quantile
 library(nlme) #mixed-effect model
 library('parallel') 
-
 # Packages for geostatistics
 library(gstat)   # The most popular R-Package for Kriging 
 library(automap) # Automatize some (or all) parts of the gstat-workflow 
-
 # Finally, some packages to make pretty plots
 library(patchwork)
 library(viridis)
 library(tmap)
 library(graphics) #for text
+
+## == Connect to YAML Configuration File == ##
+
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config_path <- file.path(config_dir, "config_06.yml")
+config <- yaml::yaml.load_file(config_path)
+
+# Define the parent directory (four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
 
 ## == DEFINE COORDINATE SYSTEMS == ##
@@ -35,7 +45,7 @@ crs_32 <- CRS(sprintf(utmStr, 32))
 
 ## == import geodata == ##
 
-data <- read.csv('/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv(config$input_data$local_modeling_dataset, sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
@@ -50,15 +60,17 @@ data_32 <- as(data_32, 'Spatial')
 
 # define grid for projection 
 # import AOI
-grid100 = readOGR('/TooBigData/Grid100_LocalPredictors_Amsterdam.gpkg')
+grid100 = readOGR(config$input_data$local_predictors_amsterdam)
 
 #convert to sf to use function "rename"
 grid100 <- st_as_sf(grid100)
 #make key qith unique fid that will be used for joining all local datasets and related predictions
 grid100$key = seq(1,nrow(grid100))
-
+# data_32 is already in EPSG: 3035
+grid100 <- st_transform(grid100, crs = st_crs(data_32))
 #convert grid back to spatialPolygonsDataframe
 grid100 <- as(grid100, 'Spatial')
+
 
 
 linear= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=data_32)
@@ -119,17 +131,12 @@ mergeParallelX <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergePa
 spplot(mergeParallelX["var1.pred"], main = "universary kriging predictions")
 
 raster_uk <- raster(mergeParallelX["var1.pred"])
-#examine
-plot(raster_uk)
 
 #convert NA to 0's
 raster_uk[is.na(raster_uk)] <- 0
 
 #export option - to raster
-writeRaster(raster_uk, paste0('/TooBigData/LocalModels/rasterUK.tif'))
-
-
-
+writeRaster(raster_uk, file.path(out_location_dir, 'rasterUK.tif'))
 
 ## ==  Extract the raster values underlying the polygons == ##
 
@@ -150,7 +157,7 @@ cen100_uk_values_predictedNO2 <- cen100_uk_values_predictedNO2 %>% rename(predNO
 cen100_uk_values_predictedNO2[is.na(cen100_uk_values_predictedNO2)] <- 0
 
 #export option
-sf::st_write(cen100_uk_values_predictedNO2, dsn="/TooBigData/LocalModels/predictedNO2_UK_formula.gpkg", driver = "GPKG")
+sf::st_write(cen100_uk_values_predictedNO2, dsn=file.path(out_location_dir,"predictedNO2_UK_formula.gpkg"), driver = "GPKG")
 
 #export option - to csv
 #write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')

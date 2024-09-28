@@ -1,22 +1,32 @@
-#necessary modules
-require(rgdal)
+# Load necessary libraries
+library(sf)
 library(raster)
-require(sf)
 library(ggplot2)
-library(raster)
 library(rgeos)
 library(tidyverse)
-library(sp) #spatial operations
-library(leaflet) #mapping in OSM
-library(terra) #rasterize
-library(stars) #necessary for st_rasterize
+library(sp)
+library(leaflet)
+library(terra)
+library(stars)
 library(dplyr)
+library(yaml)
+library(rgdal)
+library(nngeo)     # For finding nearest features
 
+# Connect to YAML configuration file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir))
+config_path <- file.path(config_dir, "config_06.yml")
+config <- yaml::yaml.load_file(config_path)
 
-#IMPORT GEODATA
+# Define output path
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
-#import area of interest at 100m resolution
-grid <- readOGR('/TooBigData/grid100Utrecht.gpkg')
+# IMPORT GEODATA
+# Import area of interest at 100m resolution
+utrecht100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$utrecht100m_grid), winslash = "/")
+grid <- readOGR(utrecht100m_grid_dir)
 
 ## == data processing == ##
 
@@ -24,11 +34,12 @@ grid <- readOGR('/TooBigData/grid100Utrecht.gpkg')
 grid_sf <- st_as_sf(grid)
 
 #Modelpredictions
-modelPredictions <- read.csv('/TooBigData/SpatialPredictionPatterns/Predicting NO2-AllModelsUtrecht100_xy.csv')
+modelPredictions <- read.csv(file.path(parent_directory, config$input_data$utrecht_predicting_no2_allmodels))
 modelPredictions_sf <- st_as_sf(modelPredictions, coords=c("Longitude", "Latitude"), crs=4326)
 #make crs similar
 modelPredictions_sf <- st_transform(modelPredictions_sf, crs=st_crs(grid_sf))
-Hamburg_NO2PredictionPerModel <- st_join(grid_sf, modelPredictions_sf, join = st_nearest_feature)
+Utrecht_NO2PredictionPerModel <- st_join(grid_sf, modelPredictions_sf, join = st_nearest_feature)
 
 #export option
-sf::st_write(Hamburg_NO2PredictionPerModel, dsn='/TooBigData/Grid100/Utrecht_NO2PredictionPerModel.gpkg', driver = "GPKG")
+sf::st_write(Utrecht_NO2PredictionPerModel, dsn=file.path(out_location_dir, 'Utrecht_NO2PredictionPerModel.gpkg'), driver = "GPKG")
+
