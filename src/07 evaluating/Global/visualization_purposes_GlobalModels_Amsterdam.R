@@ -25,7 +25,7 @@ config07 <- yaml::yaml.load_file(config07_path)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 
 # Paths for input data based on YAML configuration
-Amsterdam_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data), winslash = "/")
+Amsterdam_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Amsterdam_NO2PredictionPerModel), winslash = "/")
 
 # Import global dataset as an sf object, projected onto Amsterdam (if shapefile format is used)
 global <- st_read(Amsterdam_NO2PredictionPerModel_dir)

@@ -1,5 +1,9 @@
 input_data:
-  data/input/TooBigData/Amsterdam/Amsterdam_NO2PredictionPerModel.shp
+  Amsterdam_NO2PredictionPerModel: data/input/TooBigData/Amsterdam/Amsterdam_NO2PredictionPerModel.shp
+  Bayreuth_NO2PredictionPerModel: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel.gpkg
+  Bayreuth_NO2PredictionPerModel_ZI: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel_ZI.gpkg
+  Hamburg_NO2PredictionPerModel: data\input\TooBigData\Hamburg\Hamburg_NO2PredictionPerModel.gpkg
+  Utrecht_NO2PredictionPerModel: data\input\TooBigData\Utrecht\Utrecht_NO2PredictionPerModel.gpkg
 
 out_location:
   data/output/07 evaluating//

@@ -9,17 +9,31 @@ library(tmap)    # for static and interactive maps
 library(leaflet) # for interactive maps
 library(ggplot2) # tidyverse data visualization package
 library(spatialEco)
+library(yaml)
 
 ## == import spatial datasets == ##
 
-#Bayreuth
-grid100_Bayreuth = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100/Bayreuth_NO2PredictionPerModel.gpkg')
+# Connect to YAML file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config07_path <- file.path(config_dir, "config_07.yml")
 
-#Hamburg
-grid100_HH = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100/Hamburg_NO2PredictionPerModel.gpkg')
+# Read YAML configuration file
+config07 <- yaml::yaml.load_file(config07_path)
 
-#Utrecht
-grid100_Utrecht = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100/Utrecht_NO2PredictionPerModel.gpkg')
+# Define the parent directory (move four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+Bayreuth_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Bayreuth_NO2PredictionPerModel), winslash = "/")
+Bayreuth_NO2PredictionPerModel_ZI_dir <- normalizePath(file.path(parent_directory, config07$input_data$Bayreuth_NO2PredictionPerModel_ZI), winslash = "/")
+Hamburg_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Hamburg_NO2PredictionPerModel), winslash = "/")
+Utrecht_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Utrecht_NO2PredictionPerModel), winslash = "/")
+
+grid100_Bayreuth <- st_read(Bayreuth_NO2PredictionPerModel_dir)
+grid100_HH <- st_read(Hamburg_NO2PredictionPerModel_dir)
+grid100_Utrecht <- st_read(Utrecht_NO2PredictionPerModel_dir)
+
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
 #to datadrame
 grid100_Utrecht_df <- as.data.frame(grid100_Utrecht)
@@ -41,11 +55,12 @@ palette <- c("grey", "palegreen4", "palegreen3","palegreen","greenyellow",  "yel
 
 
 # loop through the shapefiles and create a map for each - Bayreuth
-for (i in 1:length(vars)) {
+for (i in seq_along(vars)) {
   vars[i]
   map <- tm_shape(grid100_Bayreuth) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 600, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Bayreuth_",model,".jpg", sep=""))
+  filename <- file.path(out_location_dir, paste0("Bayreuth_", model, ".jpg"))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
 }
 
 
@@ -77,41 +92,47 @@ proj4string(poly) = CRS("+proj=longlat +datum=WGS84 +no_defs +type=crs")
 poly_sf <- st_as_sf(poly)
 ##  First project data into a planar coordinate system (here 3035)
 poly_3035 <- st_transform(poly_sf, crs=3035)
+grid100_Bayreuth <- st_transform(grid100_Bayreuth, crs=3035)
+
 #export option
-sf::st_write(poly_3035, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/poly_3035.gpkg", driver = "GPKG")
+sf::st_write(poly_3035, dsn=file.path(out_location_dir,"poly_3035.gpkg"), driver = "GPKG", append = FALSE)
 
 
 #spatial query035
 sp_query <-spatial.select(poly_3035,y = grid100_Bayreuth,predicate = "contains")
 
-sf::st_write(sp_query, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Bayreuth/Bayreuth_ZI.gpkg", driver = "GPKG")
+sf::st_write(sp_query, dsn = file.path(out_location_dir, "Bayreuth_ZI.gpkg"), driver = "GPKG", append = FALSE)
+
 
 #manual option: import Bayreuth ZI (two Bayreuth versions are available: a zoomed out- and zoomed in-version where we use the latter now.
-grid100_Bayreuth_ZI = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Bayreuth/Bayreuth_ZI.gpkg')
+grid100_Bayreuth_ZI = readOGR(Bayreuth_NO2PredictionPerModel_ZI_dir)
 
 
 # loop through the shapefiles and create a map for each - Bayreuth
-for (i in 1:length(vars)) {
+for (i in seq_along(vars)) {
   vars[i]
   map <- tm_shape(grid100_Bayreuth_ZI) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Bayreuth/Bayreuth_ZI_",model,".jpg", sep=""))
+  filename <- file.path(out_location_dir, paste0("Bayreuth_ZI_", model, ".jpg"))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
 }
 
 # loop through the shapefiles and create a map for each - Hamburg
-for (i in 1:length(vars)) {
+for (i in seq_along(vars)) {
   vars[i]
   map <- tm_shape(grid100_HH) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Hamburg/Hamburg_",model,".jpg", sep=""))
+  filename <- file.path(out_location_dir, paste0("Hamburg_", model, ".jpg"))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
 }
 
 # loop through the shapefiles and create a map for each - Utrecht
-for (i in 1:length(vars)) {
+for (i in seq_along(vars)) {
   vars[i]
   map <- tm_shape(grid100_Utrecht) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Utrecht/Utrecht_",model,".jpg", sep=""))
+  filename <- file.path(out_location_dir, paste0("Utrecht_", model, ".jpg"))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
 }
 
 # tm_shape(grid100_Bayreuth) + tm_fill(col = "predicted_NO2_LASSO", breaks=breaks, palette=palette, legend.show = FALSE)
