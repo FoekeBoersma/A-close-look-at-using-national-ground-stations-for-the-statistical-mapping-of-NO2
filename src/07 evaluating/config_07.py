@@ -9,7 +9,11 @@ input_data = {
 
 'utrecht_predicting_no2_allmodels' : 'data/input/TooBigData/Utrecht/Predicting NO2-AllModelsUtrecht100_xy.csv',
 
-'predicting_dataset': 'data/input/GlobalModelData/PredictingDataset.csv'
+'predicting_dataset': 'data/input/GlobalModelData/PredictingDataset.csv',
+
+'modeling_dataset': 'data/input/GlobalModelData/ModellingDataset-Global.csv',
+
+'global_spachar': 'data/input/TooBigData/Global_spachar.gpkg'
 } 
 
 parameters_random_forest = {
@@ -47,7 +51,8 @@ parameters_xgboost = {
 
 
 output = {
-    "output_map": "data/output/07 evaluating"
+    "output_map": "data/output/07 evaluating",
+    "output_map_excel": "data/output/07 evaluating/excel"
 }
 
 
