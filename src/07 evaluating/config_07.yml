@@ -1,5 +1,5 @@
 input_data:
-  data/output/06 predicting/Amsterdam_NO2PredictionPerModel.gpkg
+  data/input/TooBigData/Amsterdam/Amsterdam_NO2PredictionPerModel.shp
 
 out_location:
   data/output/07 evaluating//
