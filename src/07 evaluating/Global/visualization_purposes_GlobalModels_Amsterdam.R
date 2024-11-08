@@ -25,9 +25,8 @@ config07 <- yaml::yaml.load_file(config07_path)
 # Define the parent directory (move four levels up)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 
-# Paths for input data based on YAML configuration
-Amsterdam_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Amsterdam_NO2PredictionPerModel), winslash = "/")
-print(Amsterdam_NO2PredictionPerModel_dir)
+# # Paths for input data based on YAML configuration
+Amsterdam_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data), winslash = "/")
 ## == import global dataset, projected onto Amsterdam == ##
 global = readOGR(Amsterdam_NO2PredictionPerModel_dir)
 
