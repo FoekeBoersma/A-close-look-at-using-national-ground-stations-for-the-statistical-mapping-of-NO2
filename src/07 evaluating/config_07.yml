@@ -1,0 +1,5 @@
+input_data:
+  Amsterdam_NO2PredictionPerModel: data/input/TooBigData/Amsterdam/Amsterdam_NO2PredictionPerModel.gpkg
+
+out_location:
+  data/output/07 evaluating/

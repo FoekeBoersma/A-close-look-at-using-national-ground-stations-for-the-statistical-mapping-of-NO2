@@ -13,7 +13,7 @@ input_data = {
 
 'modeling_dataset': 'data/input/GlobalModelData/ModellingDataset-Global.csv',
 
-'global_spachar': 'data/input/TooBigData/Global_spachar.gpkg'
+'global_spachar': 'data/input/TooBigData/Global_spachar.gpkg',
 } 
 
 parameters_random_forest = {

@@ -12,9 +12,27 @@ library("ggplot2")
 library("GGally")
 library(sp)
 library(spatialEco)
+library(yaml)
 
+# Connect to YAML file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config07_path <- file.path(config_dir, "config_07.yml")
+
+# Read YAML configuration file
+config07 <- yaml::yaml.load_file(config07_path)
+
+# Define the parent directory (move four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+# Paths for input data based on YAML configuration
+Amsterdam_NO2PredictionPerModel_dir <- normalizePath(file.path(parent_directory, config07$input_data$Amsterdam_NO2PredictionPerModel), winslash = "/")
+print(Amsterdam_NO2PredictionPerModel_dir)
 ## == import global dataset, projected onto Amsterdam == ##
-global = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/Grid100/Amsterdam_NO2PredictionPerModel.gpkg')
+global = readOGR(Amsterdam_NO2PredictionPerModel_dir)
+
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
 ## == Amsterdam == ##
 
@@ -52,12 +70,12 @@ rect_around_point <- function(x,xsize,ysize){
 Amsterdam_square_buffer <- rect_around_point(Amsterdam_point_3035, 30000, 30000)
 
 ## == export option == ##
-#sf::st_write(Amsterdam_square_buffer, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Amsterdam_square_buffer.gpkg", driver = "GPKG")
+#sf::st_write(Amsterdam_square_buffer, dsn=paste0(out_location_dir,"Amsterdam_square_buffer.gpkg"), driver = "GPKG")
 
 #spatial query - assign the data to the extent of Amsterdam which was defined above
 sp_query_Amsterdam <-spatial.select(Amsterdam_square_buffer ,y = global,predicate = "contains")
 #export option
-#sf::st_write(sp_query_Amsterdam, dsn="C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/sp_query_Amsterdam.gpkg", driver = "GPKG")
+#sf::st_write(sp_query_Amsterdam, dsn="paste0(out_location_dir,sp_query_Amsterdam.gpkg"), driver = "GPKG")
 
 ## == maps == ##
 
@@ -75,5 +93,5 @@ for (i in 1:length(vars)) {
   print(vars[i])
   map <- tm_shape(sp_query_Amsterdam) + tm_fill(col = vars[i], breaks=breaks, palette=palette_colors, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/visualization/Amsterdam/Global_",model,".jpg", sep=""))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste(out_location_dir, "Global_",model,".jpg", sep=""))
 }
