@@ -11,6 +11,8 @@ input_data = {
 
 'predicting_dataset': 'data/input/GlobalModelData/PredictingDataset.csv',
 
+'predicting_dataset_local': 'data/input/LocalModelData/PredictingDataset.csv',
+
 'modeling_dataset': 'data/input/GlobalModelData/ModellingDataset-Global.csv',
 
 'global_spachar': 'data/input/TooBigData/Global_spachar.gpkg',
