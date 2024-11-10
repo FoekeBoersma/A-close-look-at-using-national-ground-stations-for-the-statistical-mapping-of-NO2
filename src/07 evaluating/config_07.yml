@@ -10,5 +10,15 @@ input_data:
 
   all_models: data\input\TooBigData\Amsterdam\all_models.gpkg
 
+
+  predictedNO2_Linear: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_Linear.gpkg
+  predictedNO2_Linear_SeparatingSpatialGroups: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_Linear_SeparatingSpatialGroups.gpkg
+  predictedNO2_MEM: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_MEM.gpkg
+  predictedNO2_OK: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_OK.gpkg
+  predictedNO2_UK_formula: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_UK_formula.gpkg
+  predictedNO2_UK_SeparatingSpatialGroups: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_UK_SeparatingSpatialGroups.gpkg
+
+  no2tif: data\input\no2_Amsterdam\no2.tif
+
 out_location:
   data/output/07 evaluating//
