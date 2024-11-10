@@ -25,8 +25,10 @@ try:
     import config_07
 except ModuleNotFoundError as e:
     print(f"Error importing module: {e}")
+
 from functions import cross_validate_models
-predicting_dataset = config_07.input_data['predicting_dataset']
+
+predicting_dataset = config_07.input_data['predicting_dataset_local']
 
 n_estimators_random_forest = config_07.parameters_random_forest ['n_estimators_random_forest']
 random_state_random_forest = config_07.parameters_random_forest ['random_state_random_forest']
@@ -62,8 +64,8 @@ df = df.drop(['Unnamed: 0', 'Longitude', 'Latitude'], axis=1)
 #remove NAs and replace with 0
 df=df.fillna(0)
 
-y = df['mean_value_NO2'] #target
-x = df.drop(['mean_value_NO2'], axis=1) #predictors
+y = df['Lopend_gemiddelde'] #target
+x = df.drop(['Lopend_gemiddelde'], axis=1) #predictors
 feature_list = list(x.columns)
 
 #models
@@ -130,7 +132,7 @@ df_total_mae = pd.DataFrame(total_mae)
 # RMSE Plot 
 plt.rcParams["font.family"] = "serif"
 fig, ax = plt.subplots()
-fig.suptitle('Variance in Root Mean Square Error (CV=20) per model', fontsize=12, fontweight='bold')
+fig.suptitle(f'Variance in Root Mean Square Error (CV={len(random_states)}) per model', fontsize=12, fontweight='bold')
 
 # Use boxplot on DataFrame 
 ax.boxplot([df_total_rmse[model] for model in df_total_rmse.columns])
@@ -141,14 +143,14 @@ ax.set_xticklabels(df_total_rmse.columns)
 ax.set_xlabel('Models')
 ax.set_ylabel('RMSE')
 
-plot_filename = os.path.join(output_map, 'RMSE - CV20 - ModelPerformances')
+plot_filename = os.path.join(output_map, f'RMSE - CV{len(random_states)} - ModelPerformances_local')
 plt.savefig(plot_filename, dpi=100)
 plt.show()
 
 # R2 Plot 
 plt.rcParams["font.family"] = "serif"
 fig, ax = plt.subplots()
-fig.suptitle('Variance in R2 (CV=20) per model', fontsize=14, fontweight='bold')
+fig.suptitle(f'Variance in R2 (CV={len(random_states)}) per model', fontsize=14, fontweight='bold')
 
 # Use boxplot on each model’s R2 values 
 ax.boxplot([df_total_r2[model] for model in df_total_r2.columns])
@@ -159,14 +161,14 @@ ax.set_xticklabels(df_total_r2.columns)
 ax.set_xlabel('Models')
 ax.set_ylabel('R2')
 
-plot_filename = os.path.join(output_map, 'R2 - CV20 - ModelPerformances')
+plot_filename = os.path.join(output_map, f'R2 - CV{len(random_states)} - ModelPerformances_local')
 plt.savefig(plot_filename, dpi=100)
 plt.show()
 
 # MAE Plot 
 plt.rcParams["font.family"] = "serif"
 fig, ax = plt.subplots()
-fig.suptitle('Variance in MAE (CV=20) per model', fontsize=14, fontweight='bold')
+fig.suptitle(f'Variance in MAE (CV={len(random_states)}) per model', fontsize=14, fontweight='bold')
 
 # Use boxplot on each model’s MAE values 
 ax.boxplot([df_total_mae[model] for model in df_total_mae.columns])
@@ -177,7 +179,7 @@ ax.set_xticklabels(df_total_mae.columns)
 ax.set_xlabel('Models')
 ax.set_ylabel('MAE')
 
-plot_filename = os.path.join(output_map, 'MAE - CV20 - ModelPerformances')
+plot_filename = os.path.join(output_map, f'MAE - CV{len(random_states)} - ModelPerformances_local')
 plt.savefig(plot_filename, dpi=100)
 plt.show()
 

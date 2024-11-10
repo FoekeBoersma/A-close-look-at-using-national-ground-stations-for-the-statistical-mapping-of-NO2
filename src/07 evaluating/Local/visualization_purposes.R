@@ -9,9 +9,25 @@ library(leaflet) # for interactive maps
 library(ggplot2) # tidyverse data visualization package
 library("ggplot2")
 library("GGally")
+library(yaml)
 
+# Connect to YAML file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config07_path <- file.path(config_dir, "config_07.yml")
 
-grid100 = readOGR('C:/Users/foeke/OneDrive/Documenten/submitting paper/TooBigData/AllModels/all_models.gpkg')
+# Read YAML configuration file
+config07 <- yaml::yaml.load_file(config07_path)
+
+# Define the parent directory (move four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+# Paths for input data based on YAML configuration
+all_models_dir <- normalizePath(file.path(parent_directory, config07$input_data$all_models), winslash = "/")
+# Define output directory
+out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
+
+grid100 = readOGR(all_models_dir)
 
 #to datadrame
 grid100_df <- as.data.frame(grid100)
@@ -48,7 +64,7 @@ grid100_df_models <- grid100_df[,c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","ME
 
 local <- grid100_df[,c("Li","LiSpa","MEM","Uk","UkSpa","Ok")]
 #export local models to csv
-write.csv(local, 'C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/localmodel_predictions.csv')
+write.csv(local, file.path(out_location_dir, 'localmodel_predictions.csv'))
 
 #examine statistics per model
 summary(grid100_df_models)
@@ -59,10 +75,10 @@ grid100_df_noNAs = na.omit(grid100_df_models)
 pm <- ggpairs(grid100_df_noNAs[, c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
               upper = list(continuous = GGally::wrap(ggally_cor))) +
                        theme(axis.text.x = element_text(angle =90, hjust = 1)) 
-ggsave("C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/allplot-includingNO2tif.jpeg", pm, width = 6, height = 6)
+ggsave(file.path(out_location_dir, "allplot-includingNO2tif.jpeg"), pm, width = 6, height = 6)
 
 
-dev.off()
+if (dev.cur() > 1) dev.off()  # Only close if a device is open
 
 ## == adjusted raanges/correcting for outliers == ##
 
@@ -99,11 +115,11 @@ pm <- ggpairs(between0_85_allmodels[, c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa
               upper = list(continuous = GGally::wrap(ggally_cor))) +
   theme(axis.text.x = element_text(angle =90, hjust = 1)) 
 
-ggsave("C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/allplot-includingNO2tif-between0_85.jpeg", pm, width = 6, height = 6)
+ggsave(file.path(out_location_dir, "allplot-includingNO2tif-between0_85.jpeg"), pm, width = 6, height = 6)
 
 
 
-dev.off()
+if (dev.cur() > 1) dev.off()  # Only close if a device is open
 
 colnames(grid100)
 
@@ -121,31 +137,45 @@ palette <- c("grey", "palegreen4", "palegreen3","palegreen","greenyellow",  "yel
 
 
 # loop through the shapefiles and create a map for each
-for (i in 1:length(vars)) {
+for (i in 1:seq_along(vars)) {
   vars[i]
   map <- tm_shape(grid100) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
   model = vars[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/",model,".jpg", sep=""))
+  tmap_save(map, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir, paste0(model, ".jpg")))
+
 }
 
 #legend visualization
 legende <- tm_shape(grid100) + tm_fill(col = "predNO2_Lin", title = "                        Predicted NO2", breaks=breaks, palette=palette, legend.is.portrait = FALSE) + tm_layout(legend.only = T, fontfamily = "serif")
-tmap_save(legende, width = 1000, height = 1000, units="px", filename = "C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/Legende.jpg")
-
+tmap_save(legende, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir, "Legende.jpg"))
 
 ## == local predictors == ##
 predictors = c("nightlight_450",    "nightlight_4950", "population_1000","population_3000","road_class_1_5000",
                "road_class_2_100","road_class_2_1000","road_class_1_100","road_class_2_5000" ,"road_class_3_100",  "road_class_3_300" 
                ,"trafBuf50")
 
-# loop through the shapefiles and create a map for each
-for (i in 1:length(predictors)) {
-  predictors[i]
-  map <- tm_shape(grid100) + tm_fill(col = predictors[i], legend.show = FALSE)
-  hi = predictors[i]
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = paste("C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/local_predictors",hi,".jpg", sep=""))
-}
 
+# Loop through each predictor and create a map if the column exists
+for (i in seq_along(predictors)) {
+  predictor <- predictors[i]
+  
+  # Check if the predictor column exists in grid100
+  if (predictor %in% names(grid100)) {
+    map <- tm_shape(grid100) + tm_fill(col = predictor, legend.show = FALSE)
+    
+    # Construct the file path for saving
+    filename <- file.path(out_location_dir, paste0("local_predictors_", predictor, ".jpg"))
+    
+    # Save the map
+    tmap_save(map, width = 1000, height = 1000, units = "px", filename = filename)
+    
+    # Optional: Print a message to confirm successful save
+    print(paste("Saved map for predictor:", predictor))
+  } else {
+    # Print a warning if the predictor column is missing
+    warning(paste("Column", predictor, "not found in grid100"))
+  }
+}
 
 summary(grid100$road_class_2_5000)
 
@@ -154,5 +184,5 @@ palette_rcl2_5000 <- c("palegreen4", "palegreen3","palegreen","greenyellow",  "y
 
 rcl2_5000 = tm_shape(grid100) + tm_fill(col = "road_class_2_5000", breaks=breaks_rcl2_5000, palette=palette_rcl2_5000, legend.show = FALSE)
 legende_rcl2_5000 <- tm_shape(grid100) + tm_fill(col = "road_class_2_5000", title = "                        road_class_2_5000", breaks=breaks_rcl2_5000, palette=palette_rcl2_5000, legend.is.portrait = FALSE) + tm_layout(legend.only = T, fontfamily = "serif")
-tmap_save(rcl2_5000, width = 1000, height = 1000, units="px", filename = "C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/rcl2_5000.jpg")
-tmap_save(legende_rcl2_5000, width = 1000, height = 1000, units="px", filename = "C:/Users/foeke/OneDrive/Documenten/submitting paper/testing_script_outputs/output07/Legende_rcl2_5000.jpg")
+tmap_save(rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir,"rcl2_5000.jpg"))
+tmap_save(legende_rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir,"Legende_rcl2_5000.jpg"))

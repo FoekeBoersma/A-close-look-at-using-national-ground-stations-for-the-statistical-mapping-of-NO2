@@ -5,5 +5,10 @@ input_data:
   Hamburg_NO2PredictionPerModel: data\input\TooBigData\Hamburg\Hamburg_NO2PredictionPerModel.gpkg
   Utrecht_NO2PredictionPerModel: data\input\TooBigData\Utrecht\Utrecht_NO2PredictionPerModel.gpkg
 
+
+  modeling_dataset_local: data\input\LocalModelData\ModellingDataset-Local.csv
+
+  all_models: data\input\TooBigData\Amsterdam\all_models.gpkg
+
 out_location:
   data/output/07 evaluating//
