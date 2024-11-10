@@ -24,6 +24,20 @@ library(patchwork)
 library(viridis)
 library(tmap)
 library(graphics) #for text
+# Connect to YAML file
+current_dir <- rstudioapi::getActiveDocumentContext()$path
+config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config07_path <- file.path(config_dir, "config_07.yml")
+
+# Read YAML configuration file
+config07 <- yaml::yaml.load_file(config07_path)
+
+# Define the parent directory (move four levels up)
+parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+
+# Paths for input data based on YAML configuration
+modeling_dataset_local_dir <- normalizePath(file.path(parent_directory, config07$input_data$modeling_dataset_local), winslash = "/")
+
 
 
 ## == DEFINE COORDINATE SYSTEMS == ##
@@ -34,7 +48,7 @@ crs <- CRS("+proj=longlat +datum=WGS84") # crs
 
 ## == import geodata == ##
 
-data <- read.csv('C:/Users/foeke/OneDrive/Documenten/submitting paper/All scripts - paper/data/LocalModelData/ModellingDataset-Local.csv', sep=';')
+data <- read.csv(modeling_dataset_local_dir , sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
