@@ -5,3 +5,7 @@ src/02 composing initial dataset/Local/.Rhistory
 *.pyc
 data/input/5TIFs
 data/input/TooBigData
+rosm.cache/osm/10_525_336.png
+rosm.cache/osm/10_525_337.png
+rosm.cache/osm/10_526_336.png
+rosm.cache/osm/10_526_337.png
