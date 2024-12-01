@@ -1,11 +1,12 @@
 input_data:
-  Amsterdam_NO2PredictionPerModel: data/input/TooBigData/Amsterdam/Amsterdam_NO2PredictionPerModel.shp
+  Amsterdam_NO2PredictionPerModel: data\input\TooBigData\Amsterdam\Amsterdam_NO2PredictionPerModel.shp
   Bayreuth_NO2PredictionPerModel: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel.gpkg
   Bayreuth_NO2PredictionPerModel_ZI: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel_ZI.gpkg
   Hamburg_NO2PredictionPerModel: data\input\TooBigData\Hamburg\Hamburg_NO2PredictionPerModel.gpkg
   Utrecht_NO2PredictionPerModel: data\input\TooBigData\Utrecht\Utrecht_NO2PredictionPerModel.gpkg
 
-
+  # modeling_dataset_global: \data\input\GlobalModelData\ModellingDataset-Global.shp
+  modeling_dataset_global: \data\input\GlobalModelData\ModellingDataset-Global.csv
   modeling_dataset_local: data\input\LocalModelData\ModellingDataset-Local.csv
 
   all_models: data\input\TooBigData\Amsterdam\all_models.gpkg
@@ -20,5 +21,7 @@ input_data:
 
   no2tif: data\input\no2_Amsterdam\no2.tif
 
+  amsterdam_shape: data\input\SpatialPlaces\Amsterdam.shp
+
 out_location:
-  data/output/07 evaluating//
+  data\output\07 evaluating\\
