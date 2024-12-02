@@ -11,11 +11,12 @@ library("ggplot2")
 library("GGally")
 library(yaml)
 
+## == importing data == ## 
+
 # Connect to YAML file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
 config_dir <- dirname(dirname(current_dir)) # One level up in directory
 config07_path <- file.path(config_dir, "config_07.yml")
-
 # Read YAML configuration file
 config07 <- yaml::yaml.load_file(config07_path)
 
@@ -26,20 +27,14 @@ parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 all_models_dir <- normalizePath(file.path(parent_directory, config07$input_data$all_models), winslash = "/")
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
-
 grid100 = readOGR(all_models_dir)
+
+## == data processing == ##
 
 #to datadrame
 grid100_df <- as.data.frame(grid100)
-
 # Add fill layer to nz shape
 grid100 <- st_as_sf(grid100)
-
-
-colnames(grid100_df)
-
-View(grid100_df)
-
 grid100_df <- grid100_df %>% rename("Li"  ="predNO2_Lin",
                                     "LiSpa"= "predNO2_LinSep",
                                     "MEM" = "predNO2_MEM",
@@ -54,28 +49,28 @@ grid100_df <- grid100_df %>% rename("Li"  ="predNO2_Lin",
   
 )
 
-colnames(grid100_df)
-
-
 # ## == scatter plot == ##
 
+# Create the output directory for JPEGs
+output_jpg_dir <- file.path(out_location_dir, "allplots")
+if (!dir.exists(output_jpg_dir)) {
+  dir.create(output_jpg_dir)
+}
 
-grid100_df_models <- grid100_df[,c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")]
-
+grid100_df_models <- grid100_df[,c("RF","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")]
 local <- grid100_df[,c("Li","LiSpa","MEM","Uk","UkSpa","Ok")]
 #export local models to csv
 write.csv(local, file.path(out_location_dir, 'localmodel_predictions.csv'))
 
 #examine statistics per model
 summary(grid100_df_models)
-
 grid100_df_noNAs = na.omit(grid100_df_models)
 
 # # use jpg() instead of svg(), if you want PDF output
-pm <- ggpairs(grid100_df_noNAs[, c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
+pm <- ggpairs(grid100_df_noNAs[, c("RF","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
               upper = list(continuous = GGally::wrap(ggally_cor))) +
                        theme(axis.text.x = element_text(angle =90, hjust = 1)) 
-ggsave(file.path(out_location_dir, "allplot-includingNO2tif.jpeg"), pm, width = 6, height = 6)
+ggsave(file.path(output_jpg_dir, "allplot-includingNO2tif-excluding_LightGBM.jpeg"), pm, width = 6, height = 6)
 
 
 if (dev.cur() > 1) dev.off()  # Only close if a device is open
@@ -102,26 +97,18 @@ for(var in vars){
   #append processed data to list that is defined outside for loop.
   processed_data <- c(processed_data, paste0("between0_85", var, sep=""))
 }
-#examine
-processed_data
-
 
 between0_85_allmodels <- Reduce(function(x,y) merge(x, y, by = "key", all.x = TRUE, all.y = TRUE),
                          list(between0_85RF, between0_85Lgb,between0_85Xgb,between0_85Las,between0_85Rid,
                         between0_85Li, between0_85LiSpa, between0_85MEM, between0_85Uk, between0_85UkSpa, between0_85Ok, between0_85no2))
 
-
-pm <- ggpairs(between0_85_allmodels[, c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
+pm <- ggpairs(between0_85_allmodels[, c("RF","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
               upper = list(continuous = GGally::wrap(ggally_cor))) +
   theme(axis.text.x = element_text(angle =90, hjust = 1)) 
 
-ggsave(file.path(out_location_dir, "allplot-includingNO2tif-between0_85.jpeg"), pm, width = 6, height = 6)
-
-
+ggsave(file.path(output_jpg_dir, "allplot-includingNO2tif-between0_85-excluding_LightGBM.jpeg"), pm, width = 6, height = 6)
 
 if (dev.cur() > 1) dev.off()  # Only close if a device is open
-
-colnames(grid100)
 
 ## == maps == ##
 
