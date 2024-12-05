@@ -19,9 +19,6 @@ localdataset <- read.csv(localdataset_dir, sep = ',')
 colnames(localdataset) <- gsub("_", " ", colnames(localdataset))  # Replace underscores with spaces
 colnames(localdataset) <- gsub("[^[:alnum:][:space:]]", "", colnames(localdataset))  # Remove other special characters
 
-
-colnames(localdataset)
-
 # List column names to be analyzed
 # List column names to be analyzed
 columns_to_analyze <- c(
