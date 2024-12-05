@@ -13,21 +13,21 @@ config <- yaml::yaml.load_file(config_path)
 # Define output path
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
-globaldataset_dir <- normalizePath(file.path(parent_directory, config$input_data$globaldataset), winslash = "/")
-globaldataset <- read.csv(globaldataset_dir, sep = ',')
+localdataset_dir <- normalizePath(file.path(parent_directory, config$input_data$localdataset), winslash = "/")
+localdataset <- read.csv(localdataset_dir, sep = ',')
 
-colnames(globaldataset) <- gsub("_", " ", colnames(globaldataset))  # Replace underscores with spaces
-colnames(globaldataset) <- gsub("[^[:alnum:][:space:]]", "", colnames(globaldataset))  # Remove other special characters
+colnames(localdataset) <- gsub("_", " ", colnames(localdataset))  # Replace underscores with spaces
+colnames(localdataset) <- gsub("[^[:alnum:][:space:]]", "", colnames(localdataset))  # Remove other special characters
 
 
-colnames(globaldataset)
+colnames(localdataset)
 
 # List column names to be analyzed
 # List column names to be analyzed
 columns_to_analyze <- c(
-  "nightlight 450", "nightlight 3150", "population 1000", "population 3000", 
-  "road class 2 25", "road class 3 3000", "road class 3 300", "trop mean filt 2019", 
-  "BldDen100", "NDVI", "trafBuf25", "trafBuf50"
+  "nightlight 4950",  "population 3000", "road class 1 5000",
+  "road class 2 1000", "road class 2 5000", "road class 3 100",
+  "road class 3 300", "trafBuf50"
 )
 
 # Function to compute statistics for specified columns
@@ -61,7 +61,7 @@ compute_statistics <- function(data, columns) {
 }
 
 # Compute statistics for selected columns
-stats_df <- compute_statistics(globaldataset, columns_to_analyze)
+stats_df <- compute_statistics(localdataset, columns_to_analyze)
 
 # Create a LaTeX table
 # We need to pivot the data to have variables as rows and statistics as columns
@@ -101,12 +101,12 @@ for (i in 1:nrow(latex_table)) {
 latex_output <- paste0(latex_output, "\\end{tabular}\n\\caption{Summary statistics for predictors.}\n\\end{table}")
 
 # Write the LaTeX table to the text file
-output_txt_dir <- file.path(out_location_dir, "statistics_global_predictors")
+output_txt_dir <- file.path(out_location_dir, "statistics_local_predictors")
 if (!dir.exists(output_txt_dir)) {
   dir.create(output_txt_dir)
 }
 
-output_file_path <- file.path(output_txt_dir, "statistics_predictors_global_latex.txt")
+output_file_path <- file.path(output_txt_dir, "statistics_predictors_local_latex.txt")
 writeLines(latex_output, output_file_path)
 
 # Confirm completion
