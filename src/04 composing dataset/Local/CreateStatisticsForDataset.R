@@ -21,7 +21,7 @@ colnames(localdataset) <- gsub("[^[:alnum:][:space:]]", "", colnames(localdatase
 
 # List column names to be analyzed
 # List column names to be analyzed
-columns_to_analyze <- c(
+columns_to_analyze <- c("nightlight 450",
   "nightlight 4950",  "population 3000", "road class 1 5000",
   "road class 2 1000", "road class 2 5000", "road class 3 100",
   "road class 3 300", "trafBuf50"
