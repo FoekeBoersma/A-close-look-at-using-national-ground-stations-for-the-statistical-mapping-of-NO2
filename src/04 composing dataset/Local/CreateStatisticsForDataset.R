@@ -98,7 +98,7 @@ for (i in 1:nrow(latex_table)) {
 }
 
 # Finish the LaTeX table
-latex_output <- paste0(latex_output, "\\end{tabular}\n\\caption{Summary statistics for predictors.}\n\\end{table}")
+latex_output <- paste0(latex_output, "\\end{tabular}\n\\caption{Summary statistics for local predictors.}\n\\end{table}")
 
 # Write the LaTeX table to the text file
 output_txt_dir <- file.path(out_location_dir, "statistics_local_predictors")
