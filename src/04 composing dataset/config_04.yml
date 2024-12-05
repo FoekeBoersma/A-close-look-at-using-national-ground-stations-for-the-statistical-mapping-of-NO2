@@ -12,6 +12,9 @@ input_data:
   grid_bldden_hamburg: data/output/04 composing dataset/grid_bldden_100m_hamburg.shp
   grid_bldden_utrecht: data/output/04 composing dataset/grid_bldden_100m_utrecht.shp
 
+  globaldataset: data/input/GlobalModelData/PredictingDataset.csv
+  localdataset: data/input/LocalModelData/PredictingDataset.csv
+
   
 tifs:
   tifs5: data/input/5TIFs/
