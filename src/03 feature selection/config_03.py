@@ -11,7 +11,8 @@ input_dataset = {
 }
 
 output = {
-    "output_map": "/data/output/03 feature selection/",
+    "output_map_global": "/data/output/03 feature selection/global",
+    "global_shap_output_map": "global_shap_output",
     "output_map_local": "/data/output/03 feature selection/local/"
 }
 
