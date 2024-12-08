@@ -85,7 +85,10 @@ local_ms_with_grid_info <- st_join(local_ms_sf, grid100)
 
 # Filter the dataset to keep rows where at least one field is not NULL
 local_ms_with_grid_info_no_na <- local_ms_with_grid_info %>%
-  filter(!is.na(predicted_NO2_RF))  # Assuming 'mean_val' is the relevant field in local_ms_sf
+  filter(!is.na(predicted_NO2_RF)) %>% # Assuming 'mean_val' is the relevant field in local_ms_sf
+  rename(predNO2_OK = predicted_OK)
+
+colnames(local_ms_with_grid_info_no_na)
 
 # Calculate differences between model predictions and benchmark (NO2)
 local_ms_with_grid_info_differences <- local_ms_with_grid_info_no_na %>%
@@ -112,7 +115,7 @@ if (!dir.exists(output_jpg_dir)) {
 
 
 # List of difference columns to visualize
-diff_columns <- c("diff_RF", "diff_LASSO", "diff_RIDGE", "diff_LightGBM", "diff_XGBoost")
+diff_columns <- c("diff_Lin", "diff_LinSep", "diff_MEM", "diff_UK", "diff_UKSep", "diff_OK")
 
 # Loop through each column and create a plot with Amsterdam boundary
 for (col in diff_columns) {

@@ -100,7 +100,7 @@ global_ms_with_grid_info_differences <- global_ms_with_grid_info_no_na %>%
 ## == visualization purposes == ##
 
 # Create the output directory for JPEGs
-output_jpg_dir <- file.path(out_location_dir, "differences_jpgs")
+output_jpg_dir <- file.path(out_location_dir, "global_differences_jpgs")
 if (!dir.exists(output_jpg_dir)) {
   dir.create(output_jpg_dir)
 }
