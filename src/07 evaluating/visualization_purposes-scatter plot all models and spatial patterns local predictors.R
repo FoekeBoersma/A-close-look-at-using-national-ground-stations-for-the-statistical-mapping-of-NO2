@@ -15,13 +15,14 @@ library(yaml)
 
 # Connect to YAML file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
-config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config_dir <- dirname(current_dir) # One level up in directory
 config07_path <- file.path(config_dir, "config_07.yml")
+print(config07_path)
 # Read YAML configuration file
 config07 <- yaml::yaml.load_file(config07_path)
 
-# Define the parent directory (move four levels up)
-parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+# Define the parent directory (move three levels up)
+parent_directory <- dirname(dirname(dirname(current_dir)))
 
 # Paths for input data based on YAML configuration
 all_models_dir <- normalizePath(file.path(parent_directory, config07$input_data$all_models), winslash = "/")
@@ -57,6 +58,12 @@ if (!dir.exists(output_jpg_dir)) {
   dir.create(output_jpg_dir)
 }
 
+# Create the output directory for JPEGs
+output_local_predictors_dir <- file.path(out_location_dir, "local_predictors")
+if (!dir.exists(output_local_predictors_dir)) {
+  dir.create(output_local_predictors_dir)
+}
+
 grid100_df_models <- grid100_df[,c("RF","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")]
 local <- grid100_df[,c("Li","LiSpa","MEM","Uk","UkSpa","Ok")]
 #export local models to csv
@@ -65,6 +72,7 @@ write.csv(local, file.path(out_location_dir, 'localmodel_predictions.csv'))
 #examine statistics per model
 summary(grid100_df_models)
 grid100_df_noNAs = na.omit(grid100_df_models)
+print(nrow(grid100_df_noNAs))
 
 # # use jpg() instead of svg(), if you want PDF output
 pm <- ggpairs(grid100_df_noNAs[, c("RF","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok","no2")], 
@@ -75,9 +83,12 @@ ggsave(file.path(output_jpg_dir, "allplot-includingNO2tif-excluding_LightGBM.jpe
 
 if (dev.cur() > 1) dev.off()  # Only close if a device is open
 
-## == adjusted raanges/correcting for outliers == ##
+## == adjusted ranges/correcting for outliers == ##
 
 #create for loop that for every model filters rows and keep the ones with values between 0 and 85.
+
+#create a data frame to store the results
+omission_summary <- data.frame(Variable = character(), NAs = numeric(), OutOfRange = numeric(), TotalOmitted = numeric())
 
 #relevant models
 vars = c("RF","Lgb","Xgb","Las","Rid","Li","LiSpa","MEM","Uk","UkSpa","Ok", "no2")
@@ -96,7 +107,59 @@ for(var in vars){
   dim(paste0("between0_85", var, sep=""))
   #append processed data to list that is defined outside for loop.
   processed_data <- c(processed_data, paste0("between0_85", var, sep=""))
+
+    # Count NA values
+  n_na <- sum(is.na(grid100_df[[var]]))
+  
+  # Count values outside the range (0, 85)
+  out_of_range <- sum(grid100_df[[var]] <= 0 | grid100_df[[var]] >= 85, na.rm = TRUE)
+  
+  # Total omitted (NA + out of range)
+  total_omitted <- n_na + out_of_range
+  
+  # Append to summary
+  omission_summary <- rbind(omission_summary, 
+                             data.frame(Variable = var, 
+                                        NAs = n_na, 
+                                        OutOfRange = out_of_range, 
+                                        TotalOmitted = total_omitted))
+  
+  # For printing progress in console
+  cat(paste("Variable:", var, "NAs:", n_na, "Out of Range:", out_of_range, "Total Omitted:", total_omitted, "\n"))
 }
+
+# Save summary as CSV (optional)
+write.csv(omission_summary, file.path(out_location_dir, "omission_summary.csv"), row.names = FALSE)
+
+# Add detailed information to a text file
+txt_file_path <- file.path(out_location_dir, "omission_summary_details.txt")
+
+print(txt_file_path)
+
+# Open a connection to the file
+txt_file <- file(txt_file_path, open = "wt")
+
+# Write a header
+writeLines("Omission Summary Details", txt_file)
+writeLines(paste0("Total number of samples: ", nrow(grid100_df_noNAs)), txt_file)
+writeLines("\nVariable-specific omission counts:", txt_file)
+
+# Loop over each variable and add detailed omission counts
+for (var in vars) {
+  # Samples not meeting criteria
+  not_meeting_criteria <- sum(!(grid100_df_noNAs[[var]] > 0 & grid100_df_noNAs[[var]] < 85), na.rm = TRUE)
+  
+  # Write details to the file
+  writeLines(paste0(
+    "Variable: ", var, 
+    "\n - Not Meeting Criteria (<0 or >=85): ", not_meeting_criteria, 
+    "\n - NAs: ", sum(is.na(grid100_df[[var]])), 
+    "\n"
+  ), txt_file)
+}
+
+# Close the connection
+close(txt_file)
 
 between0_85_allmodels <- Reduce(function(x,y) merge(x, y, by = "key", all.x = TRUE, all.y = TRUE),
                          list(between0_85RF, between0_85Lgb,between0_85Xgb,between0_85Las,between0_85Rid,
@@ -151,7 +214,7 @@ for (i in seq_along(predictors)) {
     map <- tm_shape(grid100) + tm_fill(col = predictor, legend.show = FALSE)
     
     # Construct the file path for saving
-    filename <- file.path(out_location_dir, paste0("local_predictors_", predictor, ".jpg"))
+    filename <- file.path(output_local_predictors_dir, paste0("local_predictors_", predictor, ".jpg"))
     
     # Save the map
     tmap_save(map, width = 1000, height = 1000, units = "px", filename = filename)
@@ -171,5 +234,5 @@ palette_rcl2_5000 <- c("palegreen4", "palegreen3","palegreen","greenyellow",  "y
 
 rcl2_5000 = tm_shape(grid100) + tm_fill(col = "road_class_2_5000", breaks=breaks_rcl2_5000, palette=palette_rcl2_5000, legend.show = FALSE)
 legende_rcl2_5000 <- tm_shape(grid100) + tm_fill(col = "road_class_2_5000", title = "                        road_class_2_5000", breaks=breaks_rcl2_5000, palette=palette_rcl2_5000, legend.is.portrait = FALSE) + tm_layout(legend.only = T, fontfamily = "serif")
-tmap_save(rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir,"rcl2_5000.jpg"))
-tmap_save(legende_rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(out_location_dir,"Legende_rcl2_5000.jpg"))
+tmap_save(rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(output_local_predictors_dir,"rcl2_5000.jpg"))
+tmap_save(legende_rcl2_5000, width = 1000, height = 1000, units="px", filename = file.path(output_local_predictors_dir,"Legende_rcl2_5000.jpg"))
