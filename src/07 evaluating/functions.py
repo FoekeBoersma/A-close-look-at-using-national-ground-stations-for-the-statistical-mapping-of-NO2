@@ -3,8 +3,28 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 from typing import List, Tuple, Dict, Any
+import os
 
 # Define the function
+def create_new_map(map_name, location):
+    """
+    Creates a new directory (map) with the given name at the specified location.
+    
+    Args:
+        map_name (str): Name of the new directory.
+        location (str): Path where the new directory should be created.
+    """
+    try:
+        # Combine the location and map name to form the full path
+        full_path = os.path.join(location, map_name)
+        
+        # Create the directory
+        os.makedirs(full_path, exist_ok=True)
+        
+        print(f"Directory '{map_name}' created at location: {location}")
+    except Exception as e:
+        print(f"Error creating directory: {e}")
+
 def cross_validate_models(models, model_names, X, y, random_states, test_size=0.25):
     """
     Perform cross-validation for multiple models and store performance metrics (RMSE, R2, MAE) for each model.

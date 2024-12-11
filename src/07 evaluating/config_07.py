@@ -54,7 +54,8 @@ parameters_xgboost = {
 
 output = {
     "output_map": "data/output/07 evaluating",
-    "output_map_excel": "data/output/07 evaluating/excel"
+    "output_map_excel": "data/output/07 evaluating/excel",
+    "output_map_global_model_performance": "global_model_performances_cv"
 }
 
 
