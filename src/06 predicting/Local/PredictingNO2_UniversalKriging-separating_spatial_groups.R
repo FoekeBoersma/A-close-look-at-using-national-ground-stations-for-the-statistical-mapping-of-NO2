@@ -25,6 +25,7 @@ library(tmap)
 library(graphics) #for text
 library(yaml)
 
+## == define file paths and import files == ##
 
 current_dir <- rstudioapi::getActiveDocumentContext()$path
 config_dir <- dirname(dirname(current_dir)) # One level up in directory
@@ -33,72 +34,71 @@ config <- yaml::yaml.load_file(config_path)
 
 # Define the parent directory (four levels up)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
+local_modeling_dataset_dir = normalizePath(file.path(parent_directory, config$input_data$local_modeling_dataset_distance_processed), winslash = "/")
+grid100_amsterdam_dir = normalizePath(file.path(parent_directory, config$input_data$Grid100_LocalPredictors_Amsterdam_inclSelVars), winslash = "/")
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
+# Create the output directory for predictions
+output_uksep_dir <- file.path(out_location_dir, "uksep")
+if (!dir.exists(output_uksep_dir)) {
+  dir.create(output_uksep_dir)
+}
+
 ## == DEFINE COORDINATE SYSTEMS == ##
 
-#CRS with metric system is preferred (=3035).
+#CRS with metric system is preferred (=crs_32).
 crs <- CRS("+proj=longlat +datum=WGS84") # crs
+utmStr <- "+proj=utm +zone=%d +datum=NAD83 +units=m +no_defs +ellps=GRS80"
+crs_32 <- CRS(sprintf(utmStr, 32))
 
 ## == import geodata == ##
-
-data <- read.csv(config$input_data$local_modeling_dataset, sep=';')
+data <- read.csv(local_modeling_dataset_dir, sep=';')
 #replace NA with 0
 data[is.na(data)] <- 0
 
-data = data %>% rename('Lopend_gemiddelde' = 'mean_value_NO2')
-
 #convert to spatial points dataframe (gstat relies on sp package more than sf)
 #first convert to sf
-#to sf
 data_sf = st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
-#change to planar crs
-data_3035 <- st_transform(data_sf,crs=3035)
+data_32 <- st_transform(data_sf,crs=crs_32) #change to planar crs
 #to SpatialPointsDataFrame
-data_3035 <- as(data_3035, 'Spatial')
+data_32 <- as(data_32, 'Spatial')
 
-
-# define grid for projection 
+# define grid for projection (covariance)
 # import AOI
-grid100 = readOGR(config$input_data$local_predictors_amsterdam)
-
-#convert to sf to use function "rename"
+grid100 = readOGR(grid100_amsterdam_dir)
+print(head(grid100))
 grid100 <- st_as_sf(grid100)
-
-#convert grid back to spatialPolygonsDataframe
+#convert grid to spatialPolygonsDataframe
 grid100 <- as(grid100, 'Spatial')
+
+print(head(grid100))
 
 ## == create column relating to spatial characterization (e.g. distance to road/population) == ##
 
 #examine basic data statistics of variables that will be used for quantile filtering!
-quantile(data_3035$road_class_3_100)
-quantile(data_3035$population_1000)
+quantile(data_32$road_class_3_100)
+quantile(data_32$population_1000)
 
 #spatial character: group "urban" - higher than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-data_3035$spachar = ifelse(data_3035$population_1000 > quantile(data_3035$population_1000, 0.5) & ((data_3035$road_class_2_100 > 0 | data_3035$road_class_1_100 > 0) | data_3035$road_class_3_100 > quantile(data_3035$road_class_3_100, 0.5)), 1, 0)
-
-#spatial character: group "low population" - lower than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
-data_3035$spachar = ifelse(data_3035$population_1000 < quantile(data_3035$population_1000, 0.5) & ((data_3035$road_class_2_100 > 0 | data_3035$road_class_1_100 > 0) | data_3035$road_class_3_100 > quantile(data_3035$road_class_3_100, 0.5)), 2, data_3035$spachar)
-
-#spatial character: group "far from road" - all other samples (i.e. further away than 100m from road class 1/2 OR lower than .5 quantile of road class 3 100)
-data_3035$spachar = ifelse((data_3035$spachar == 1 | data_3035$spachar == 2), data_3035$spachar, 3)
+data_32$spachar = ifelse(data_32$population_1000 > quantile(data_32$population_1000, 0.5) & ((data_32$road_class_2_100 > 0 | data_32$road_class_1_100 > 0) | data_32$road_class_3_100 > quantile(data_32$road_class_3_100, 0.5)), 1, 0)
+#spatial character: group "suburban" - lower than ,5 quantile of population 1000 - within 100m of road class 1 OR 2 OR higher than .5 quantile of road class 3 100.
+data_32$spachar = ifelse(data_32$population_1000 < quantile(data_32$population_1000, 0.5) & ((data_32$road_class_2_100 > 0 | data_32$road_class_1_100 > 0) | data_32$road_class_3_100 > quantile(data_32$road_class_3_100, 0.5)), 2, data_32$spachar)
+#spatial character: group "rural" - all other samples (i.e. further away than 100m from road class 1/2 OR lower than .5 quantile of road class 3 100)
+data_32$spachar = ifelse((data_32$spachar == 1 | data_32$spachar == 2), data_32$spachar, 3)
 
 #examine thresholds for each variable-criterium, per spatial group
-print(quantile(data_3035$population_1000, 0.5))
-print(quantile(data_3035$road_class_3_100, 0.5))
+print(quantile(data_32$population_1000, 0.5))
+print(quantile(data_32$road_class_3_100, 0.5))
 
 #assign to variable
-population1000_05 = as.vector(quantile(data_3035$population_1000, 0.5))
-roadclass3_100_05 = as.vector(quantile(data_3035$road_class_3_100, 0.5)) #as.vector necessary to only obtain value
+population1000_05 = as.vector(quantile(data_32$population_1000, 0.5))
+roadclass3_100_05 = as.vector(quantile(data_32$road_class_3_100, 0.5)) #as.vector necessary to only obtain value
 
-
-grid100$spachar = ifelse(grid100$population_1000 > population1000_05 & ((grid100$road_class_2_100 > 0 | grid100$road_class_1_100 > 0) | grid100$road_class_3_100 > roadclass3_100_05), 1, 0)
-
-grid100$spachar = ifelse(grid100$population_1000 < population1000_05 & ((grid100$road_class_2_100 > 0 | grid100$road_class_1_100 > 0) | grid100$road_class_3_100 > roadclass3_100_05), 2, grid100$spachar)
-
-grid100$spachar = ifelse((grid100$spachar == 1 | grid100$spachar == 2), grid100$spachar, 3)
-
+# create unique number per spatial group
+grid100$spachar = ifelse(grid100$population_1000 > population1000_05 & ((grid100$road_class_2_100 > 0 | grid100$road_class_1_100 > 0) | grid100$road_class_3_100 > roadclass3_100_05), 1, 0) #urban
+grid100$spachar = ifelse(grid100$population_1000 < population1000_05 & ((grid100$road_class_2_100 > 0 | grid100$road_class_1_100 > 0) | grid100$road_class_3_100 > roadclass3_100_05), 2, grid100$spachar) #suburban
+grid100$spachar = ifelse((grid100$spachar == 1 | grid100$spachar == 2), grid100$spachar, 3) #rural
 
 ## == make grids per spatial group == ##
 
@@ -122,75 +122,71 @@ Urb_grid100_key[Urb_grid100_key$spachar != 1, 1:12] <- NA
 #join all predictors information - only urban samples have predictors values 
 Urb_grid100 <- merge(Urb_grid100, Urb_grid100_key, by.x = "key", by.y = "key")
 
-# LOW POPULATION - assign predictor information to only 'low population' samples
+# SUBURBAN - assign predictor information to only 'suburban' samples
 
-#data processing - low population (create grid whereby cells with low population characteristics
+#data processing - suburban (create grid whereby cells with suburban characteristics
 #only contain predictors values)
 
 #assign grid100 to apart variable which will be used for data processing purposes - grid100 remains intact
-Lowpop_grid100 <- grid100
-#create unique key -this key will later be used to join the processed low population dataset with the initial low population dataset
-Lowpop_grid100$key <- seq(1, nrow(Lowpop_grid100))
-Lowpop_grid100_key <- Lowpop_grid100 #assign to variable for further data processing
+Suburban_grid100 <- grid100
+#create unique key -this key will later be used to join the processed suburban dataset with the initial suburban dataset
+Suburban_grid100$key <- seq(1, nrow(Suburban_grid100))
+Suburban_grid100_key <- Suburban_grid100 #assign to variable for further data processing
 #retain spatial polygon dataframe, only with key column. Other data will be processed
 #and later joined via the common key
-Lowpop_grid100 <- Lowpop_grid100[,-(1:13)]
+Suburban_grid100 <- Suburban_grid100[,-(1:13)]
 #convert to dataframe for data processing purposes
-Lowpop_grid100_key  <- as.data.frame(Lowpop_grid100_key )
+Suburban_grid100_key  <- as.data.frame(Suburban_grid100_key )
 #if the row does not have the value "2" (low pupulation) related to column "spachar", give all other predictors the value NA
-Lowpop_grid100_key[Lowpop_grid100_key$spachar != 2, 1:12] <- NA
+Suburban_grid100_key[Suburban_grid100_key$spachar != 2, 1:12] <- NA
 #join all predictors information - only urban samples have predictors values 
-Lowpop_grid100 <- merge(Lowpop_grid100, Lowpop_grid100_key, by.x = "key", by.y = "key")
+Suburban_grid100 <- merge(Suburban_grid100, Suburban_grid100_key, by.x = "key", by.y = "key")
 
 
-# FAR FROM ROAD - assign predictor information to only 'far from road' samples
+# RURAL - assign predictor information to only 'rural' samples
 
-#data processing - far from road (create grid whereby cells with far from road characteristics
+#data processing - rural (create grid whereby cells with rural characteristics
 #only contain values)
 
 #assign grid100 to apart variable which will be used for data processing purposes - grid100 remains intact
-FFR_grid100 <- grid100
-#create unique key -this key will later be used to join the processed far from road dataset with the initial far from road dataset
-FFR_grid100$key <- seq(1, nrow(FFR_grid100))
-FFR_grid100_key <- FFR_grid100 #assign to variable for further data processing
+rural_grid100 <- grid100
+#create unique key -this key will later be used to join the processed rural dataset with the initial rural dataset
+rural_grid100$key <- seq(1, nrow(rural_grid100))
+rural_grid100_key <- rural_grid100 #assign to variable for further data processing
 #retain spatial polygon dataframe, only with key column. Other data will be processed
 #and later joined via the common key
-FFR_grid100 <- FFR_grid100[,-(1:13)]
+rural_grid100 <- rural_grid100[,-(1:13)]
 #convert to dataframe for data processing purposes
-FFR_grid100_key  <- as.data.frame(FFR_grid100_key )
+rural_grid100_key  <- as.data.frame(rural_grid100_key )
 #if the row does not have the value "3" (low pupulation) related to column "spachar", give all other predictors the value NA
-FFR_grid100_key[FFR_grid100_key$spachar != 3, 1:12] <- NA
+rural_grid100_key[rural_grid100_key$spachar != 3, 1:12] <- NA
 #join all predictors information - only urban samples have predictors values 
-FFR_grid100 <- merge(FFR_grid100, FFR_grid100_key, by.x = "key", by.y = "key")
+rural_grid100 <- merge(rural_grid100, rural_grid100_key, by.x = "key", by.y = "key")
 
 
 #convert to sf
 Urb_grid100_sf <- st_as_sf(Urb_grid100)
-Lowpop_grid100_sf <- st_as_sf(Lowpop_grid100)
-FFR_grid100_sf <- st_as_sf(FFR_grid100)
+Suburban_grid100_sf <- st_as_sf(Suburban_grid100)
+rural_grid100_sf <- st_as_sf(rural_grid100)
 
 # export options - spatial distributions
 #shp - grid
-# sf::st_write(Urb_grid100_sf, dsn="/Grid100/Amsterdam/Urban_100grid.gpkg", driver = "GPKG")
-# sf::st_write(Lowpop_grid100_sf, dsn="/Grid100/Amsterdam/Lowpop_grid100.gpkg", driver = "GPKG")
-# sf::st_write(FFR_grid100, dsn="/Grid100/Amsterdam/FFR_grid100.gpkg", driver = "GPKG")
+# sf::st_write(Urb_grid100_sf, dsn=file.path(output_uksep_dir, "Urban_100grid.gpkg"), driver = "GPKG")
+# sf::st_write(Suburban_grid100_sf, dsn=file.path(output_uksep_dir, "Suburban_grid100.gpkg"), driver = "GPKG")
+# sf::st_write(rural_grid100, dsn=file.path(output_uksep_dir, Rural_grid100.gpkg"), driver = "GPKG")
 
 ### ===  kriging per spatial character === ###
 
-data_sp <- data_3035
-
+data_sp <- data_32
 #create different datasets, based on the spatial character - input for models
 Urban <- data_sp[data_sp$spachar == 1, ]
-Lowpopulation <- data_sp[data_sp$spachar == 2, ]
-FarFromRoad <- data_sp[data_sp$spachar == 3, ]
-
+Suburban <- data_sp[data_sp$spachar == 2, ]
+Rural <- data_sp[data_sp$spachar == 3, ]
 
 ## == Urban - Kriging == ##
-
 linear_urb= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Urban)
 summary(resid(linear_urb))
 #to dataframe
-
 data_linear_urb <- data.frame(x = Urban$coords.x1, y = Urban$coords.x2, resid=resid(linear_urb))
 
 #variogram - automatically
@@ -200,12 +196,8 @@ plot(variogram_auto_urban)
 print(variogram_auto_urban$var_model)
 autofit_params_urban <- variogram_auto_urban$var_model #create dataset including variogram parameters
 
-# 
 # variogram_auto_urban_1 = variogram(Lopend_gemiddelde ~ 1, Urban, cutoff=1000)
 # plot(variogram_auto_urban_1)
-
-
-
 
 # = universal kriging = #
 
@@ -214,20 +206,14 @@ autofit_params_urban <- variogram_auto_urban$var_model #create dataset including
 #PARALLEL
 
 Urban$Lopend_gemiddelde
-
 # Calculate the number of cores
 no_cores <- detectCores() - 1
-
 # Initiate cluster (after loading all the necessary object to R environment: meuse, meuse.grid, m)
 cl <- makeCluster(no_cores)
-
 parts <- split(x = 1:length(Urb_grid100), f = 1:no_cores)
-
 clusterExport(cl = cl, varlist = c("Urban", "Urb_grid100", "autofit_params_urban", "parts"), envir = .GlobalEnv)
 clusterEvalQ(cl = cl, expr = c(library('sp'), library('gstat')))
-
 system.time(parallelX <- parLapply(cl = cl, X = 1:no_cores, fun = function(x) krige(formula = Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, locations = Urban, newdata = Urb_grid100[parts[[x]],], model = autofit_params_urban)))
-
 stopCluster(cl)
 
 # Merge all the predictions    
@@ -246,84 +232,59 @@ mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[13]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[14]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[15]])
 
-
 # Create SpatialPixelsDataFrame from mergeParallelX
 mergeParallelX_Urban <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergeParallelX@data)
-
 # Plot mergeParallelX    
 spplot(mergeParallelX_Urban["var1.pred"], main = "universal kriging predictions")
-
 raster_uk_Urban <- raster(mergeParallelX_Urban["var1.pred"])
 #examine
 plot(raster_uk_Urban)
-
 #convert NA to 0's
 raster_uk_Urban[is.na(raster_uk_Urban)] <- 0
 
 #export option - to raster
-#writeRaster(raster_uk_Urban, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Urban.tif'))
+raster::crs(raster_uk_Urban) <- "+proj=utm +zone=32 +datum=NAD83 +units=m +no_defs +ellps=GRS80"
+writeRaster(raster_uk_Urban, file.path(output_uksep_dir, 'rasterAmsterdam_UK_Urban.tif'))
 
 # Extract the raster values underlying the polygons
-
 Urb_grid100$ID <- seq(1:nrow(Urb_grid100))
 grid_centroids <- gCentroid(Urb_grid100,byid=TRUE)
-
 cen100_UK_values <- raster::extract(raster_uk_Urban, grid_centroids, sp=T)
-
 Urb_grid100_sf <- st_as_sf(Urb_grid100)
 cen100_UK_values_sf <- st_as_sf(cen100_UK_values) 
 Urb_grid100_UK_values_Urban <- st_join(Urb_grid100_sf, cen100_UK_values_sf, join=st_nearest_feature)
-
 Urb_grid100_UK_values_Urban <- Urb_grid100_UK_values_Urban %>% rename(predictedUK_Urban = "var1.pred")
-
 #convert NA to 0's
 Urb_grid100_UK_values_Urban[is.na(Urb_grid100_UK_values_Urban)] <- 0
+#sf::st_write(Urb_grid100_UK_values_Urban, dsn=file.path(output_uksep_dir,"Urb_grid100_rasterUK_Amsterdam_Urban.gpkg", driver = "GPKG"))
+#write.csv(Urb_grid100_UK_values_Urban, file.path(output_uksep_dir, 'predictedNO2_UK_Urban.csv'))
 
-#sf::st_write(Urb_grid100_UK_values_Urban, dsn="/LocalModels/Urb_grid100_rasterUK_Amsterdam_Urban.gpkg", driver = "GPKG")
+## == suburban - Kriging == ##
 
-#export option - to csv
-#write.csv(Urb_grid100_UK_values_Urban, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Urban.csv')
-
-
-## == Low Population - Kriging == ##
-
-
-linear_lowpop= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Lowpopulation)
-summary(resid(linear_lowpop))
-
+linear_suburban= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Suburban)
+summary(resid(linear_suburban))
 #to dataframe
-
-data_linear_lowpop <- data.frame(x = Lowpopulation$coords.x1, y = Lowpopulation$coords.x2, resid=resid(linear_lowpop))
-
-
+data_linear_suburban <- data.frame(x = Suburban$coords.x1, y = Suburban$coords.x2, resid=resid(linear_suburban))
 #variogram - automatically
-coordinates(data_linear_lowpop ) = ~x+y
-variogram_auto_lowpop = autofitVariogram(resid ~ 1, data_linear_lowpop)
-plot(variogram_auto_lowpop)
-print(variogram_auto_lowpop$var_model)
-autofit_params_lowpop <- variogram_auto_lowpop$var_model #create dataset including variogram parameters
-
-
+coordinates(data_linear_suburban ) = ~x+y
+variogram_auto_suburban = autofitVariogram(resid ~ 1, data_linear_suburban)
+plot(variogram_auto_suburban)
+print(variogram_auto_suburban$var_model)
+autofit_params_suburban <- variogram_auto_suburban$var_model #create dataset including variogram parameters
 
 # = universal kriging = #
 
 #PARALLEL
 
-Lowpopulation$Lopend_gemiddelde
-
+Suburban$Lopend_gemiddelde
 # Calculate the number of cores
 no_cores_lp <- detectCores() - 1
-
 # Initiate cluster (after loading all the necessary object to R environment: meuse, meuse.grid, m)
 cl <- makeCluster(no_cores_lp)
-
-parts_lp <- split(x = 1:length(Lowpop_grid100), f = 1:no_cores_lp)
-
-clusterExport(cl = cl, varlist = c("Lowpopulation", "Lowpop_grid100", "autofit_params_lowpop", "parts_lp"), envir = .GlobalEnv)
+parts_lp <- split(x = 1:length(Suburban_grid100), f = 1:no_cores_lp)
+clusterExport(cl = cl, varlist = c("Suburban", "Suburban_grid100", "autofit_params_suburban", "parts_lp"), envir = .GlobalEnv)
 clusterEvalQ(cl = cl, expr = c(library('sp'), library('gstat')))
-
-system.time(parallelX <- parLapply(cl = cl, X = 1:no_cores_lp, fun = function(x) krige(formula = Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, locations = Lowpopulation, newdata = Lowpop_grid100[parts_lp[[x]],], model = autofit_params_lowpop)))
-
+system.time(parallelX <- parLapply(cl = cl, X = 1:no_cores_lp, fun = function(x) krige(formula = Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, locations = Suburban, newdata = Suburban_grid100[parts_lp[[x]],], model = autofit_params_suburban)))
 stopCluster(cl)
 
 # Merge all the predictions    
@@ -342,100 +303,65 @@ mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[13]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[14]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[15]])
 
-
 # Create SpatialPixelsDataFrame from mergeParallelX
-mergeParallelX_Lowpop <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergeParallelX@data)
+mergeParallelX_suburban <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergeParallelX@data)
 
 # Plot mergeParallelX    
-spplot(mergeParallelX_Lowpop["var1.pred"], main = "universal kriging predictions")
-
-raster_uk_Lowpop <- raster(mergeParallelX_Lowpop["var1.pred"])
+spplot(mergeParallelX_suburban["var1.pred"], main = "universal kriging predictions")
+raster_uk_suburban <- raster(mergeParallelX_suburban["var1.pred"])
 #examine
-plot(raster_uk_Lowpop)
-
-
+plot(raster_uk_suburban)
 #convert NA to 0's
-raster_uk_Lowpop[is.na(raster_uk_Lowpop)] <- 0
-
-
-
+raster_uk_suburban[is.na(raster_uk_suburban)] <- 0
 #export option - to raster
-#writeRaster(raster_uk_Lowpop, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_Lowpop.tif'))
+raster::crs(raster_uk_suburban) <- "+proj=utm +zone=32 +datum=NAD83 +units=m +no_defs +ellps=GRS80"
+writeRaster(raster_uk_suburban, file.path(output_uksep_dir, 'rasterAmsterdam_UK_suburban.tif'))
 
 # Extract the raster values underlying the polygons
-
-Lowpop_grid100$ID <- seq(1:nrow(Lowpop_grid100))
-grid_centroids <- gCentroid(Lowpop_grid100,byid=TRUE)
-
-cen100_UK_values_lp <- raster::extract(raster_uk_Lowpop, grid_centroids, sp=T)
-
-Lowpop_grid100_sf <- st_as_sf(Lowpop_grid100)
+Suburban_grid100$ID <- seq(1:nrow(Suburban_grid100))
+grid_centroids <- gCentroid(Suburban_grid100,byid=TRUE)
+cen100_UK_values_lp <- raster::extract(raster_uk_suburban, grid_centroids, sp=T)
+Suburban_grid100_sf <- st_as_sf(Suburban_grid100)
 cen100_UK_values_lp_sf <- st_as_sf(cen100_UK_values_lp) 
-Lowpop_grid100_UK_values_Lowpop <- st_join(Lowpop_grid100_sf, cen100_UK_values_lp_sf, join=st_nearest_feature)
-
-
-Lowpop_grid100_UK_values_Lowpop <- Lowpop_grid100_UK_values_Lowpop %>% rename(predictedUK_Lowpop = "var1.pred")
+Suburban_grid100_UK_values_suburban <- st_join(Suburban_grid100_sf, cen100_UK_values_lp_sf, join=st_nearest_feature)
+Suburban_grid100_UK_values_suburban <- Suburban_grid100_UK_values_suburban %>% rename(predictedUK_suburban = "var1.pred")
 
 #convert NA to 0's
-Lowpop_grid100_UK_values_Lowpop[is.na(Lowpop_grid100_UK_values_Lowpop)] <- 0
+Suburban_grid100_UK_values_suburban[is.na(Suburban_grid100_UK_values_suburban)] <- 0
+#sf::st_write(Suburban_grid100_UK_values_suburban, dsn=file.path(output_uksep_dir, "Suburban_grid100_rasterUK_Amsterdam_suburban.gpkg", driver = "GPKG"))
+#write.csv(Suburban_grid100_UK_values_suburban, file.path(output_uksep_dir, 'predictedNO2_UK_suburban.csv'))
 
-#sf::st_write(Lowpop_grid100_UK_values_Lowpop, dsn="/LocalModels/Lowpop_grid100_rasterUK_Amsterdam_Lowpop.gpkg", driver = "GPKG")
-
-#export option - to csv
-#write.csv(Lowpop_grid100_UK_values_Lowpop, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_Lowpop.csv')
-
-
-
-
-
-## == Far From Road - Kriging == ##
-
+## == rural - Kriging == ##
 
 #specify model
-linear_ffr= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=FarFromRoad)
-summary(resid(linear_ffr))
-
+linear_rural= lm(Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, data=Rural)
+summary(resid(linear_rural))
 #to dataframe
-data_linear_ffr <- data.frame(x = FarFromRoad$coords.x1, y = FarFromRoad$coords.x2, resid=resid(linear_ffr))
-
+data_linear_rural <- data.frame(x = Rural$coords.x1, y = Rural$coords.x2, resid=resid(linear_rural))
 #variogram - automatically
-coordinates(data_linear_ffr ) = ~x+y
-variogram_auto_ffr = autofitVariogram(resid ~ 1, data_linear_ffr)
-plot(variogram_auto_ffr)
-print(variogram_auto_ffr$var_model)
-autofit_params_ffr <- variogram_auto_ffr$var_model #create dataset including variogram parameters
-
-
-
-
-
+coordinates(data_linear_rural ) = ~x+y
+variogram_auto_rural = autofitVariogram(resid ~ 1, data_linear_rural)
+plot(variogram_auto_rural)
+print(variogram_auto_rural$var_model)
+autofit_params_rural <- variogram_auto_rural$var_model #create dataset including variogram parameters
 
 # = universal kriging = #
 
 #PARALLEL
-
-
-FarFromRoad <- FarFromRoad %>% select(c("Lopend_gemiddelde","nightlight_450","nightlight_4950","population_3000","road_class_1_5000","road_class_2_1000","road_class_2_5000","road_class_3_100","road_class_3_300","trafBuf50"))
+# Rural <- Rural %>% select(c("Lopend_gemiddelde","nightlight_450","nightlight_4950","population_3000","road_class_1_5000","road_class_2_1000","road_class_2_5000","road_class_3_100","road_class_3_300","trafBuf50"))
 # 
-# FarFromRoad_sf <- st_as_sf(FarFromRoad)
-# sf::st_write(FarFromRoad_sf, dsn="/LocalModels/FarFromRoad.gpkg", driver = "GPKG")
+# Rural_sf <- st_as_sf(Rural)
+# sf::st_write(Rural_sf, dsn=file.path(output_uksep_dir, "Rural.gpkg", driver = "GPKG"))
 
-FarFromRoad$Lopend_gemiddelde
-
+Rural$Lopend_gemiddelde
 # Calculate the number of cores
-no_cores_ffr <- detectCores() - 1
-
+no_cores_rural <- detectCores() - 1
 # Initiate cluster (after loading all the necessary object to R environment: meuse, meuse.grid, m)
-cl <- makeCluster(no_cores_ffr)
-
-parts_ffr <- split(x = 1:length(FFR_grid100), f = 1:no_cores_ffr)
-
-clusterExport(cl = cl, varlist = c("FarFromRoad", "FFR_grid100", "autofit_params_ffr", "parts_ffr"), envir = .GlobalEnv)
+cl <- makeCluster(no_cores_rural)
+parts_rural <- split(x = 1:length(rural_grid100), f = 1:no_cores_rural)
+clusterExport(cl = cl, varlist = c("Rural", "rural_grid100", "autofit_params_rural", "parts_rural"), envir = .GlobalEnv)
 clusterEvalQ(cl = cl, expr = c(library('sp'), library('gstat')))
-
-system.time(parallelX <- parLapply(cl = cl, X = 1:no_cores_ffr, fun = function(x) krige(formula = Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, locations = FarFromRoad, newdata = FFR_grid100[parts_ffr[[x]],], model = autofit_params_ffr)))
-
-
+system.time(parallelX <- parLapply(cl = cl, X = 1:no_cores_rural, fun = function(x) krige(formula = Lopend_gemiddelde ~ 1 + nightlight_450 + nightlight_4950 + population_3000 + road_class_1_5000 + road_class_2_1000 + road_class_2_5000 + road_class_3_100 + road_class_3_300 + trafBuf50, locations = Rural, newdata = rural_grid100[parts_rural[[x]],], model = autofit_params_rural)))
 stopCluster(cl)
 
 # Merge all the predictions    
@@ -454,91 +380,76 @@ mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[13]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[14]])
 mergeParallelX <- maptools::spRbind(mergeParallelX, parallelX[[15]])
 # Create SpatialPixelsDataFrame from mergeParallelX
-mergeParallelX_FFR <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergeParallelX@data)
+mergeParallelX_rural <- SpatialPixelsDataFrame(points = mergeParallelX, data = mergeParallelX@data)
 # Plot mergeParallelX    
-spplot(mergeParallelX_FFR["var1.pred"], main = "universal kriging predictions")
+spplot(mergeParallelX_rural["var1.pred"], main = "universal kriging predictions")
 #to raster
-raster_uk_FFR <- raster(mergeParallelX_FFR["var1.pred"])
+raster_uk_rural <- raster(mergeParallelX_rural["var1.pred"])
 #examine
-plot(raster_uk_FFR)
+plot(raster_uk_rural)
 #convert NA to 0's
-raster_uk_FFR[is.na(raster_uk_FFR)] <- 0
-
+raster_uk_rural[is.na(raster_uk_rural)] <- 0
 
 #export option - to raster
-#writeRaster(raster_uk_FFR, paste0('/LocalModels/PredictedNO2ByKriging/rasterAmsterdam_UK_FFR.tif'))
+raster::crs(raster_uk_rural) <- "+proj=utm +zone=32 +datum=NAD83 +units=m +no_defs +ellps=GRS80"
+writeRaster(raster_uk_rural, file.path(output_uksep_dir, 'rasterAmsterdam_UK_rural.tif'))
 
 # Extract the raster values underlying the polygons
-
-FFR_grid100$ID <- seq(1:nrow(FFR_grid100)) #create key for data processing purposes (data will be joined based on this key)
-grid_centroids <- gCentroid(FFR_grid100,byid=TRUE) #convert to centroids - needed as input for extract (raster) function
-
-cen100_UK_values_ffr <- raster::extract(raster_uk_FFR, grid_centroids, sp=T) #extract raster prediction patterns, based on ffr samples, to 100m grid (centroids)
+rural_grid100$ID <- seq(1:nrow(rural_grid100)) #create key for data processing purposes (data will be joined based on this key)
+grid_centroids <- gCentroid(rural_grid100,byid=TRUE) #convert to centroids - needed as input for extract (raster) function
+cen100_UK_values_rural <- raster::extract(raster_uk_rural, grid_centroids, sp=T) #extract raster prediction patterns, based on rural samples, to 100m grid (centroids)
 #make spatial (grid) - needed for spatial join
-FFR_grid100_sf <- st_as_sf(FFR_grid100)
+rural_grid100_sf <- st_as_sf(rural_grid100)
 #make spatial (centroids) - needed for spatial join
-cen100_UK_values_ffr_sf <- st_as_sf(cen100_UK_values_ffr) 
+cen100_UK_values_rural_sf <- st_as_sf(cen100_UK_values_rural) 
 #centroids to grid via spatial join
-FFR_grid100_UK_values_FFR <- st_join(FFR_grid100_sf, cen100_UK_values_ffr_sf, join=st_nearest_feature)
+rural_grid100_UK_values_rural <- st_join(rural_grid100_sf, cen100_UK_values_rural_sf, join=st_nearest_feature)
 #rename column
-FFR_grid100_UK_values_FFR <- FFR_grid100_UK_values_FFR %>% rename(predictedUK_FFR = "var1.pred")
+rural_grid100_UK_values_rural <- rural_grid100_UK_values_rural %>% rename(predictedUK_rural = "var1.pred")
 #convert NA to 0's
-FFR_grid100_UK_values_FFR[is.na(FFR_grid100_UK_values_FFR)] <- 0
+rural_grid100_UK_values_rural[is.na(rural_grid100_UK_values_rural)] <- 0
 
-#sf::st_write(FFR_grid100_UK_values_FFR, dsn="/LocalModels/Grid100_rasterUK_Amsterdam_FFR.gpkg", driver = "GPKG")
+#sf::st_write(rural_grid100_UK_values_rural, dsn=file.path(output_uksep_dir, "Grid100_rasterUK_Amsterdam_rural.gpkg", driver = "GPKG"))
 
 #export option - to csv
-#write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
-
-
-
+#write.csv(rural_grid100_UK_values_rural, file.path(output_uksep_dir, 'predictedNO2_UK_rural.csv'))
 
 ## == overlaying kriging outputs per layer == ##
 
 #define the rasters per spatial character
 pred_urb = raster(mergeParallelX_Urban['var1.pred']) #urban
-pred_lowpop = raster(mergeParallelX_Lowpop['var1.pred']) #low population
-pred_ffr = raster(mergeParallelX_FFR['var1.pred']) #far from road
+pred_suburban = raster(mergeParallelX_suburban['var1.pred']) #low population
+pred_rural = raster(mergeParallelX_rural['var1.pred']) #rural
 
 #examine one of the spatial character's rasters
 plot(pred_urb)
-plot(pred_lowpop)
-plot(pred_ffr)
+plot(pred_suburban)
+plot(pred_rural)
 
 #overlaying the rasters per spatial character, thereby getting the mean per raster cell (100m)
-overlay_mean = mean(pred_urb, pred_lowpop, pred_ffr, na.rm=TRUE)
+overlay_mean = mean(pred_urb, pred_suburban, pred_rural, na.rm=TRUE)
 #examine
 print(overlay_mean)
 plot(overlay_mean)
 
 #export option - to raster
-#writeRaster(overlay_mean, paste0('/TooBigData/LocalModels/test/overlay_SpatialGroups.tif'))
+raster::crs(overlay_mean) <- "+proj=utm +zone=32 +datum=NAD83 +units=m +no_defs +ellps=GRS80"
 
-
+writeRaster(overlay_mean, file.path(output_uksep_dir, 'overlay_SpatialGroups1.tif'))
 
 # Extract the raster values underlying the polygons
-
 grid100$ID <- seq(1:nrow(grid100))
 grid_centroids <- gCentroid(grid100,byid=TRUE)
-
 cen100_UK_values_overlay <- raster::extract(overlay_mean, grid_centroids, sp=T)
-
 grid100_sf <- st_as_sf(grid100)
 cen100_UK_values_overlay_sf <- st_as_sf(cen100_UK_values_overlay) 
 cen100_UK_values_overlay_join <- st_join(grid100_sf, cen100_UK_values_overlay_sf, join=st_nearest_feature)
 #rename prediction column
 cen100_UK_values_overlay_join <- cen100_UK_values_overlay_join %>% rename(predNO2_UKSep = "layer")
-
 #convert NA to 0's
 cen100_UK_values_overlay_join[is.na(cen100_UK_values_overlay_join)] <- 0
 
-sf::st_write(cen100_UK_values_overlay_join, dsn=file.path(out_location_dir,"predictedNO2_UK_SeparatingSpatialGroups.gpkg"), driver = "GPKG")
-
+# = export data
+sf::st_write(cen100_UK_values_overlay_join, dsn=file.path(output_uksep_dir, "predictedNO2_UK_SeparatingSpatialGroups.gpkg"), driver = "GPKG")
 #export option - to csv
-#write.csv(FFR_grid100_UK_values_FFR, '/LocalModels/PredictedNO2ByKriging/predictedNO2_UK_FFR.csv')
-
-
-
-
-
-
+#write.csv(rural_grid100_UK_values_rural, file.path(output_uksep_dir, 'predictedNO2_UK_rural.csv'))
