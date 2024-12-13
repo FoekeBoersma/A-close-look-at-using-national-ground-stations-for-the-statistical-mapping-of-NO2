@@ -1,5 +1,3 @@
-
-
 input_data = {
 'amsterdam_predicting_no2_allmodels' : 'data/input/TooBigData/Amsterdam/Predicting NO2-AllModelsAmsterdam100_xy.csv',
 
@@ -16,6 +14,8 @@ input_data = {
 'modeling_dataset': 'data/input/GlobalModelData/ModellingDataset-Global.csv',
 
 'global_spachar': 'data/input/TooBigData/Global_spachar.gpkg',
+
+'local_prediction_columns': 'data/input/LocalModelData/local_predictionColumns.csv'
 } 
 
 parameters_random_forest = {
