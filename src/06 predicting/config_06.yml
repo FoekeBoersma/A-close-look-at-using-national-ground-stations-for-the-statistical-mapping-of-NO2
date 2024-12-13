@@ -15,7 +15,8 @@ input_data:
 
   local_predictors_amsterdam: data/input/TooBigData/Amsterdam/Grid100_LocalPredictors_Amsterdam.gpkg
 
-
+  local_modeling_dataset_distance_processed: data/input/Local_ModelingDataset_distance-processed.csv
+  Grid100_LocalPredictors_Amsterdam_inclSelVars: data/input/TooBigData/Amsterdam/Grid100_LocalPredictors_Amsterdam_inclSelVars.gpkg
 
 out_location:
   data/output/06 predicting/
