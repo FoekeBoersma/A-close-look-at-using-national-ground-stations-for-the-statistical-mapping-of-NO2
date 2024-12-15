@@ -117,33 +117,45 @@ if (!dir.exists(output_jpg_dir)) {
 # List of difference columns to visualize
 diff_columns <- c("diff_Lin", "diff_LinSep", "diff_MEM", "diff_UK", "diff_UKSep", "diff_OK")
 
-# Loop through each column and create a plot with Amsterdam boundary
 for (col in diff_columns) {
-  # Create the plot
-  p <- ggplot(local_ms_with_grid_info_differences) +
-    # Add the basemap (OpenStreetMap)
-    
-    # Plot points from the difference dataset, coloring by the current difference column
-    geom_sf(aes_string(color = col), size = 3) +  
-    
-    # Overlay the Amsterdam boundary (amsterdam_shape)
-    geom_sf(data = amsterdam_shape, fill = NA, color = "black", size = 1.5) +  # Customize line color and size
-    
-    # Color scale for differences
-    scale_color_gradient2(
-      low = "red",        # Color for negative values
-      mid = "white",      # Color for zero (optional)
-      high = "blue",      # Color for positive values
-      midpoint = 0,       # Set midpoint to 0 (for balancing the red and blue colors)
-      name = paste("Difference (", col, ")", sep = "")  # Color scale label with dynamic column name
-    ) + 
-    theme_minimal() +  # Minimal theme
-    theme(legend.position = "right",  # Adjust legend position
-          plot.title = element_text(hjust = 0.5)) +  # Center the title
-    labs(title = paste("Differences in Model Prediction vs. local observations (n =", nrow(local_ms_with_grid_info_differences), ")", sep = ""))  # Dynamic title
 
-  # Save the plot as a JPEG image
-  output_jpg_path <- file.path(output_jpg_dir, paste(col, "_plot_with_amsterdam.jpg", sep = ""))
-  ggsave(output_jpg_path, plot = p, width = 10, height = 8, dpi = 300)  # Save at 300 dpi for high quality
-}
+    stats <- local_ms_with_grid_info_differences[[col]]
+    max_val <- max(stats, na.rm = TRUE)
+    min_val <- min(stats, na.rm = TRUE)
+    mean_val <- mean(stats, na.rm = TRUE)
+    median_val <- median(stats, na.rm = TRUE)
+    
+    # Create a subtitle with the stats
+    subtitle_text <- paste(
+      "Min:", round(min_val, 2), 
+      "| Max:", round(max_val, 2), 
+      "| Mean:", round(mean_val, 2), 
+      "| Median:", round(median_val, 2)
+    )
+    # Create the plot
+    p <- ggplot(local_ms_with_grid_info_differences) +
+      # Plot points from the difference dataset, coloring by the current difference column
+      geom_sf(aes_string(fill = col), size = 3, shape = 21, color = "black", stroke = 0.5) +  # Black outline
 
+      # Overlay the city's boundary
+      geom_sf(data = amsterdam_shape, fill = NA, color = "black", size = 1.5) +  # Customize line color and size
+      # Color scale for differences
+      scale_fill_gradient2(
+        low = "red",        # Color for negative values
+        mid = "white",      # Color for zero (optional)
+        high = "blue",      # Color for positive values
+        midpoint = 0,       # Set midpoint to 0 (for balancing the red and blue colors)
+        name = paste("Difference (", col, ")", sep = "")  # Color scale label with dynamic column name
+      ) + 
+      theme_minimal() +  # Minimal theme
+      theme(legend.position = "right",  # Adjust legend position
+            plot.title = element_text(hjust = 0.5)) +  # Center the title
+      labs(
+      title = paste("Differences in Model Prediction vs. local observations (n =", nrow(local_ms_with_grid_info_differences), ")", sep = ""),
+      subtitle = subtitle_text  # Add stats as subtitle
+    )
+
+    # Save the plot as a JPEG image
+    output_jpg_path <- file.path(output_jpg_dir, paste(col, "_plot_with_amsterdam.jpg", sep = ""))
+    ggsave(output_jpg_path, plot = p, width = 10, height = 8, dpi = 300)  # Save at 300 dpi for high quality
+  }

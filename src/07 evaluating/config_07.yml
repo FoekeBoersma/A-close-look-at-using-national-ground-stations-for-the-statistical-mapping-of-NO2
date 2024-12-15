@@ -22,6 +22,9 @@ input_data:
   no2tif: data\input\no2_Amsterdam\no2.tif
 
   amsterdam_shape: data\input\SpatialPlaces\Amsterdam.shp
+  bayreuth_shape: data\input\SpatialPlaces\Bayreuth.shp
+  hamburg_shape: data\input\SpatialPlaces\Hamburg_area.shp
+  utrecht_shape: data\input\SpatialPlaces\Utrecht.shp
 
 out_location:
   data\output\07 evaluating\\
