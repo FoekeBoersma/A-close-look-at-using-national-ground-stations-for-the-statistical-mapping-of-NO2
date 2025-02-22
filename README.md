@@ -1,3 +1,10 @@
+# Getting started
+
+Before running the code, make sure to install python and R.
+
+Before running the Python code, it is encouraged to create a virtual environment (`venv`) via ` shift + ctrl + p` > `Python: Select Interpreter` > `Create Virtual Environment` and use your python version. Afterwards, a `.venv` file will be created. The required Python packages are inside the requirements.txt file. The requirements.txt file can be executed in the venv via: `pip install -r requirements.txt`. 
+
+
 # Content
 
 ## 01 adding variables to initial datasets
