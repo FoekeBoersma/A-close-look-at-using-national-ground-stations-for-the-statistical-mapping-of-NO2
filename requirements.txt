@@ -7,3 +7,4 @@ scikit_learn==1.6.1
 seaborn==0.13.2
 shap==0.42.1
 xgboost==1.7.6
+openpyxl

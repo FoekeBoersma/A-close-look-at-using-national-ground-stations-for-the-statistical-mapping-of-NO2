@@ -4,7 +4,7 @@ library(terra)
 library(dplyr)
 library(spData)
 library(spDataLarge)
-library(rgdal)
+# library(rgdal)
 library(tmap)    # for static and interactive maps
 library(leaflet) # for interactive maps
 library("ggplot2")
@@ -17,24 +17,26 @@ library(yaml)
 
 # Connect to YAML file
 current_dir <- rstudioapi::getActiveDocumentContext()$path
-config_dir <- dirname(dirname(current_dir)) # One level up in directory
+config_dir <- dirname(current_dir) # One level up in directory
 config07_path <- file.path(config_dir, "config_07.yml")
-
 # Read YAML configuration file
 config07 <- yaml::yaml.load_file(config07_path)
 
 # Define the parent directory (move four levels up)
-parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
-
+parent_directory <-dirname(dirname(dirname(current_dir)))
 # Paths for input data based on YAML configuration
 all_models_dir <- normalizePath(file.path(parent_directory, config07$input_data$all_models), winslash = "/")
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
+grid100 = st_read(all_models_dir)
 
+## == (geo)processing == ##
 
+if ("Mixed_NO2" %in% colnames(grid100)) {
+  colnames(grid100)[colnames(grid100) == "Mixed_NO2"] <- "no2"
+}
 
-grid100 = readOGR(all_models_dir)
-
+print(colnames(grid100))
 
 # ## == maps == ##
 #coordinates relating to Amsterdam
@@ -76,7 +78,9 @@ Amsterdam_square_buffer <- rect_around_point(Amsterdam_point_3035, 30000, 30000)
 #sf::st_write(Amsterdam_square_buffer, dsn=file.path(out_location_dir,"Amsterdam_square_buffer.gpkg"), driver = "GPKG")
 
 
-
+grid100 <- st_transform(grid100, crs = st_crs(Amsterdam_square_buffer))
+print(st_bbox(Amsterdam_square_buffer))
+print(st_bbox(grid100))
 
 sp_query_Amsterdam <-spatial.select(Amsterdam_square_buffer ,y = grid100,predicate = "intersect")
 
@@ -100,8 +104,6 @@ vars = c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE", "pred
 
 # breaks = c(-10000, -10, 0, 0.5, 1, 2, 3, 5, 10, 50, 1000000)
 # palette_colors = c("#808080", "#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026", "#ffffff")
-
-
 
 
 # global_no2_sf <- global_no2_sf %>%
@@ -200,16 +202,18 @@ for (model_diff in diff_vars) {
   print(model_diff)
   tryCatch({
     map_diff <- create_map(sp_query_Amsterdam, model_diff, breaks, diverging_palette)
+    
+    # Fix: Close the parentheses properly
     tmap_save(map_diff, 
               width = 1000, 
               height = 1000, 
               units = "px", 
-              filename = paste(file.path(out_location_dir,paste0("Amsterdam_", model_diff, ".jpg", sep = ""))
+              filename = file.path(out_location_dir, paste0("Amsterdam_", model_diff, ".jpg")))
+    
   }, error = function(e) {
-    cat("Error with", model_diff, ":", e$message, "/n")
+    cat("Error with", model_diff, ":", e$message, "\n")  # Fix: Corrected newline character
   })
 }
-
 # Create a dummy map for the legend
 create_legend <- function(breaks, palette_colors) {
   tm_shape(sp_query_Amsterdam) +
@@ -230,7 +234,7 @@ tmap_save(legend_map,
           width = 500, 
           height = 500, 
           units = "px", 
-          filename = file.path(out_location_dir,"Amsterdam_diff_legend.jpg")
+          filename = file.path(out_location_dir,"Amsterdam_diff_legend.jpg"))
 
 
 # Function to calculate residual statistics
@@ -260,7 +264,7 @@ calculate_residual_stats <- function(data, diff_columns) {
 # Function to create formatted summary text
 create_summary_text <- function(stats_df) {
   summary_text <- paste(
-    "Residual statistics for the difference between model predictions and actual NO2 values are as follows:\n\n",
+    "Residual statistics for the difference between model predictions and actual NO2 values are as follows:/n/n",
     paste(
       sapply(1:nrow(stats_df), function(i) {
         row <- stats_df[i, ]
@@ -272,7 +276,7 @@ create_summary_text <- function(stats_df) {
           ", Max = ", round(row["Max"], 2)
         )
       }),
-      collapse = "\n"
+      collapse = "/n"
     )
   )
   
@@ -300,7 +304,7 @@ stats_df <- do.call(rbind, lapply(names(residual_stats), function(name) {
 
 # Create and save the summary text
 summary_text <- create_summary_text(stats_df)
-output_file_path <- file.path(output_file_path,"residual_summary.txt")
+output_file_path <- file.path(out_location_dir,"residual_summary.txt")
 writeLines(summary_text, con = output_file_path)
 
 ## = shapefile export option
@@ -351,7 +355,7 @@ calculate_residual_stats <- function(data, diff_columns) {
 # Function to create formatted summary text
 create_summary_text <- function(stats_df) {
   summary_text <- paste(
-    "Residual statistics for the difference between model predictions and actual NO2 values are as follows:\n\n",
+    "Residual statistics for the difference between model predictions and actual NO2 values are as follows:/n/n",
     paste(
       sapply(1:nrow(stats_df), function(i) {
         row <- stats_df[i, ]
@@ -363,7 +367,7 @@ create_summary_text <- function(stats_df) {
           ", Max = ", round(row["Max"], 2)
         )
       }),
-      collapse = "\n"
+      collapse = "/n"
     )
   )
   

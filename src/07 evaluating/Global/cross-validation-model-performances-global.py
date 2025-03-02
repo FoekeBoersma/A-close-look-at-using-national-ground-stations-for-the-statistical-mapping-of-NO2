@@ -13,7 +13,6 @@ import re
 import os
 import sys
 
-
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__)) 
 config_directory = os.path.abspath(os.path.join(current_directory, '..'))
@@ -107,13 +106,14 @@ xgb = xgb.XGBRegressor(
 #Lasso
 model_lasso = Lasso(alpha=0.1)
 #Ridge
-ridge2 = Ridge(alpha = 0.3)
+ridge = Ridge(alpha = 0.1)
 #random states - CV = 20
 random_states = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
 
 #random state is needed to ensure that same results are generated each time.
 #models
-models = [rf, xgb, model_lasso, ridge2]
+models = [rf, xgb, model_lasso, ridge]
+
 # #model_names
 model_names = ['rf', 'xgb', 'lasso', 'ridge']
 
@@ -123,6 +123,7 @@ total_r2 = {}
 total_mae = {}
 rmse_vals_round = []
 
+print(test_size)
 # Call cross_validate_models and capture output in the dictionaries
 total_rmse, total_r2, total_mae = cross_validate_models(models, model_names, x, y, random_states, test_size)
 

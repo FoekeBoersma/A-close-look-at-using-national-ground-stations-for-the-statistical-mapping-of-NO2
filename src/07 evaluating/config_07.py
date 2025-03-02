@@ -27,7 +27,7 @@ parameters_random_forest = {
      'max_depth_random_forest':10,
      'bootstrap_random_forest':True,
 
-     'test_size': 0.25
+     'test_size': 0.1
 }
 
 # LightGBM Parameters
@@ -47,7 +47,7 @@ parameters_xgboost = {
     'reg_lambda_xgboost': 0,
     'max_depth_xgboost': 5,
     'learning_rate_xgboost': 0.0005,
-    'n_estimators_xgboost': 50000,
+    'n_estimators_xgboost': 10000,
     'random_state_xgboost': 42
 }
 

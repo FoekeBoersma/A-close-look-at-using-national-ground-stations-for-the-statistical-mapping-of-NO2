@@ -9,7 +9,6 @@ import lightgbm as lgb
 import geopandas as gdp
 import os 
 import sys
-from functions import cross_validate_models_chars
 import matplotlib.pyplot as plt
 
 ## == connecting to relevant import files == ##
@@ -17,6 +16,8 @@ import matplotlib.pyplot as plt
 current_directory = os.path.dirname(os.path.abspath(__file__))
 config_directory = os.path.abspath(os.path.join(current_directory, '..'))
 sys.path.append(config_directory)
+
+from functions import cross_validate_models_chars
 
 # Try importing the config_07 module
 try:
@@ -67,6 +68,10 @@ Urb = df_sel.loc[df_sel['spachar'] == 1]
 Lowpop = df_sel.loc[df_sel['spachar'] == 2]
 FFR = df_sel.loc[df_sel['spachar'] == 3]
 
+print("urban: ", len(Urb))
+print("suburban: ", len(Lowpop))
+print("rural: ", len(FFR))
+
 #export option (geopackage) to examine spatial distribution of different groups (spatial characters)
 gdf = gdp.GeoDataFrame(df_sel, geometry=gdp.points_from_xy(df.Longitude, df.Latitude), crs=4326)
 gdf.to_file(global_spachar_dataset, driver="GPKG")
@@ -101,28 +106,32 @@ rf = RandomForestRegressor(n_estimators = 1000, random_state = 42, min_samples_s
                           min_samples_leaf=5,max_features=4,max_depth=10, bootstrap=True )
 
 #LightGBM
-lightgbm_model = lgb.LGBMRegressor(reg_alpha =2, reg_lambda = 0, max_depth = 5, learning_rate = 0.0005, n_estimators =50000, random_state=42)
+# lightgbm_model = lgb.LGBMRegressor(reg_alpha =2, reg_lambda = 0, max_depth = 5, learning_rate = 0.0005, n_estimators =50000, random_state=42)
 #XGBoost
-xgb= xgb.XGBRegressor(gamma = 5,  reg_alpha =2, reg_lambda=0, max_depth = 5, learning_rate = 0.0005, n_estimators=50000, random_state=42)
+xgb= xgb.XGBRegressor(gamma = 5,  reg_alpha =2, reg_lambda=0, max_depth = 5, learning_rate = 0.0005, n_estimators=10000, random_state=42)
 
 #linear models
 
 #Lasso
 model_lasso = Lasso(alpha=0.1)
 #Ridge
-ridge = Ridge(alpha = 0.3)
+ridge = Ridge(alpha = 0.1)
 
 #random states
 #CROSS VALIDATION = 20 FOLD
 random_states = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+
 # #models
-models = [rf, lightgbm_model, xgb, model_lasso, ridge]
+# models = [rf, lightgbm_model, xgb, model_lasso, ridge]
+models = [rf,  xgb, model_lasso, ridge]
 # model names
-model_names = ['rf', 'lgb',  'xgb', 'lasso', 'ridge']
-#training datasets
-characteristics = [df_urban_TEST, df_lowpop_TEST, df_farfromroad_TEST]
+# model_names = ['rf', 'lgb',  'xgb', 'lasso', 'ridge']
+model_names = ['rf',   'xgb', 'lasso', 'ridge']
+
+#testing datasets
+testing_datasets = [df_urban_TEST, df_lowpop_TEST, df_farfromroad_TEST]
 #other
-others = [df_urban_TRAIN, df_lowpop_TRAIN, df_farfromroad_TRAIN]
+training_datasets = [df_urban_TRAIN, df_lowpop_TRAIN, df_farfromroad_TRAIN]
 #char names
 char_names = ['Urban', 'LowPop', 'FFR']
 
@@ -130,8 +139,8 @@ char_names = ['Urban', 'LowPop', 'FFR']
 rmse_results, r2_results, mae_results = cross_validate_models_chars(
     models=models,
     model_names=model_names,
-    characteristics=characteristics,
-    others=others,
+    characteristics=testing_datasets,
+    others=training_datasets,
     char_names=char_names,
     random_states=random_states  
 )
@@ -180,3 +189,52 @@ plot_pivot_tables(rmse_pivot_tables, 'RMSE', output_map)
 plot_pivot_tables(r2_pivot_tables, 'R2', output_map)
 plot_pivot_tables(mae_pivot_tables, 'MAE', output_map)
 
+
+
+import os
+import numpy as np
+
+def save_results_to_txt(rmse_results, r2_results, mae_results, output_dir):
+    output_file = os.path.join(output_dir, "model_performance_results.txt")
+    
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write("\\newpage\n\\onecolumn\n")
+        f.write("\\begin{table}[H]\n\\centering\n")
+        f.write("\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}\n")
+        f.write("\\hline\n")
+        f.write("\\multicolumn{3}{|c|}{} &\\multicolumn{3}{c|}{Urban} & ")
+        f.write("\\multicolumn{3}{c|}{Suburban} & ")
+        f.write("\\multicolumn{3}{c|}{Rural}\\\\\n")
+        f.write("\\cline{3-12}\n")
+        f.write("\\hline\n")
+        f.write("\\multicolumn{3}{|c|}{Models} & R$^{2}$ & RMSE & MAE & R$^{2}$ & RMSE & MAE & R$^{2}$ & RMSE & MAE\\\\\n")
+        f.write("\\hline\\hline\n")
+        
+        categories = {"Non-linear": ['rf', 'xgb'], "Linear": ['ridge', 'lasso']}
+        
+        for category, model_list in categories.items():
+            f.write(f"\\multirow{{{len(model_list)*2}}}{{*}}{{{category}}}")
+            
+            for model in model_list:
+                rmse_vals = rmse_results[rmse_results['Model'] == model].groupby('Char')['Model Perf'].agg([np.mean, np.std])
+                r2_vals = r2_results[r2_results['Model'] == model].groupby('Char')['Model Perf'].agg([np.mean, np.std])
+                mae_vals = mae_results[mae_results['Model'] == model].groupby('Char')['Model Perf'].agg([np.mean, np.std])
+                
+                f.write(f"&\\multirow{{2}}{{*}}{{{model.upper()}}} & Mean ")
+                for char in ['Urban', 'LowPop', 'FFR']:
+                    f.write(f"& {r2_vals.loc[char, 'mean']:.3f} & {rmse_vals.loc[char, 'mean']:.3f} & {mae_vals.loc[char, 'mean']:.3f} ")
+                f.write("\\\\\n")
+                
+                f.write("& & SD ")
+                for char in ['Urban', 'LowPop', 'FFR']:
+                    f.write(f"& {r2_vals.loc[char, 'std']:.3f} & {rmse_vals.loc[char, 'std']:.3f} & {mae_vals.loc[char, 'std']:.3f} ")
+                f.write("\\\\\n\\cline{2-12}\n")
+        
+        f.write("\\hline\n")
+        f.write("\\end{tabular}\n")
+        f.write("\\caption{Model performance per spatial group (CV = 20). RMSE and MAE are represented in NO$_{2}$ ($\\mu$g/m\\textsuperscript{3}).}\n")
+        f.write("\\label{table:model performance per spatial group - global}\n")
+        f.write("\\end{table}\n")
+        f.write("\\normalsize\n")
+
+save_results_to_txt(rmse_results, r2_results, mae_results, output_map_excel)

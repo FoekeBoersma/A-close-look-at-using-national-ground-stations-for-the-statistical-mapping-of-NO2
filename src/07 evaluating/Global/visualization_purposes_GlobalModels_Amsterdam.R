@@ -4,7 +4,6 @@ library(terra)
 library(dplyr)
 library(spData)
 library(spDataLarge)
-library(rgdal)
 library(tmap)
 library(leaflet)
 library(ggplot2)
@@ -70,14 +69,33 @@ sp_query_Amsterdam
 # Map and export results
 vars <- c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE", "predicted_NO2_LightGBM", "predicted_NO2_XGBoost")
 breaks <- c(-100, 0, 15, 20, 25, 30, 35, 40, 45, 50, 100, 1000)
-palette_colors <- c("grey", "palegreen4", "palegreen3", "palegreen", "greenyellow", "yellow", "gold", "darkorange", "red", "darkred", "grey")
+palette_colors <- c("#808080", "#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026" , "#808080")
 
-# Loop through the shapefiles and create a map for each
-for (i in seq_along(vars)) {
-  print(vars[i])
-  map <- tm_shape(sp_query_Amsterdam) +
-    tm_fill(col = vars[i], breaks = breaks, palette = palette_colors, legend.show = FALSE)
-  
-  model <- vars[i]
-  tmap_save(map, width = 1000, height = 1000, units = "px", filename = file.path(out_location_dir, paste0("Global_", model, ".jpg")))
+for (model in vars) {
+map <- tm_shape(sp_query_Amsterdam) + tm_polygons(fill = model, 
+lwd = 0,  lwd.free = NA, palette = palette_colors, breaks=breaks, lwd.scale = tm_scale()) + tm_layout(legend.show = FALSE)  # Remove the legend
+tmap_save(map, 
+  width = 2000, 
+  height = 2000, 
+  units = "px", 
+  filename = file.path(out_location_dir, paste0("Global_", model, ".jpg")))
 }
+# # Loop through the shapefiles and create a map for each
+# for (model in vars) {
+  
+#   # Create the map
+#   map <- tm_shape(sp_query_Amsterdam) + 
+#     tm_borders(lwd = 0.5, col = "black", alpha = 0.1) +  # Adjust border transparency
+#     tm_fill(col = model, palette = palette_colors, breaks = breaks, style = "fixed", 
+#             fill_alpha = 0.7) +  # Set transparency for fill color
+#     tm_layout(main.title = paste("NO2 Prediction -", model), 
+#               legend.show = FALSE,  # Hide the legend
+#               frame = FALSE)  # Remove the map frame
+  
+#   # Save the map as a JPG file
+#   tmap_save(map, 
+#             width = 1000, 
+#             height = 1000, 
+#             units = "px", 
+#             filename = file.path(out_location_dir, paste0("Global_", model, ".jpg")))
+# }

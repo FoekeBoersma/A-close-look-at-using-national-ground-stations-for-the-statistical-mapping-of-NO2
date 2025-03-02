@@ -1,16 +1,12 @@
 # Load necessary libraries
 library(sf)
 library(raster)
-library(ggplot2)
-library(rgeos)
+library(ggplot2) 
 library(tidyverse)
 library(sp)
-library(leaflet)
 library(terra)
-library(stars)
 library(dplyr)
 library(yaml)
-library(rgdal)
 library(nngeo)     # For finding nearest features
 
 # Connect to YAML configuration file
@@ -23,28 +19,27 @@ config <- yaml::yaml.load_file(config_path)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
-# IMPORT GEODATA
+## == import geodata == ## 
 # Import area of interest at 100m resolution
 utrecht100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$utrecht100m_grid), winslash = "/")
-grid <- readOGR(utrecht100m_grid_dir)
+grid <- st_read(utrecht100m_grid_dir)
 
-# Data processing
+## ==  Data processing == ##
 grid_sf <- st_as_sf(grid)  # Convert grid to sf object
-grid_3035 <- st_transform(grid_sf, crs = 3035)  # Project to EPSG: 3035
-grid_centroids <- gCentroid(grid, byid = TRUE)  # Create centroids for each grid cell
-grid_centroids_sf <- st_as_sf(grid_centroids)  # Convert to sf object
+grid_3035 <- st_transform(grid_sf, crs = 3035)  # Project to EPSG: 3035 (useful for geoprocessing)
+grid_centroids_sf <- st_centroid(grid_sf)
 grid_centroids_sf$cenID <- seq(1, nrow(grid_centroids_sf))  # Assign unique ID
 grid_centroids_df <- as.data.frame(grid_centroids_sf)
 grid_centroids_3035 <- st_transform(grid_centroids_sf, crs = 3035)  # Project to planar coordinate system
 
 # PREDICTORS 5 (utrecht) GLOBAL DATASET
 # Import all files in a folder as a list
-tifs5_dir <- normalizePath(file.path(parent_directory, config$tifs$tifs5_utrecht), winslash = "/")
-rlist <- list.files(path = tifs5_dir, pattern = '.tif$', ignore.case = TRUE, full.names = FALSE)
+tifs7_dir <- normalizePath(file.path(parent_directory, config$tifs$tifs7_utrecht), winslash = "/")
+rlist <- list.files(path = tifs7_dir, pattern = '.tif$', ignore.case = TRUE, full.names = FALSE)
 
 for (i in rlist) {
   # Construct the full file path
-  full_file_path <- file.path(tifs5_dir, i)  # Combine directory and file name
+  full_file_path <- file.path(tifs7_dir, i)  # Combine directory and file name
 
   # Extract the name without extension
   var_name <- gsub("^Utrecht_", "", tools::file_path_sans_ext(basename(i)))
@@ -52,7 +47,7 @@ for (i in rlist) {
   assign(var_name, raster(full_file_path))  # Use the full file path
 }
 
-# EXTRACT TO CENTROIDS (Best 10/12 excluding trafBuf100 and bldDen100)
+## ==  EXTRACT TO CENTROIDS (Best 10/12 excluding trafBuf100 and bldDen100) == ##
 # Initialize lists for predictors
 predictors <- list(population_3000, road_class_3_3000, population_1000, nightlight_450,
                    road_class_2_25, nightlight_3150, road_class_3_300, trop_mean_filt)
@@ -89,19 +84,19 @@ centroids_5predictors <- centroids_5predictors %>%
                 road_class_3_300, 
                 trop_mean_filt)
 
-# BUILDING DENSITY
+## == BUILDING DENSITY == ##
 grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_utrecht)
-dis <- readOGR(grid_bldden_100m_path )
+dis <- st_read(grid_bldden_100m_path )
 dis_BldDen <- as.data.frame(dis)
 
-## == data processing == ##
+# data processing 
 
 mergeBldDen = left_join(grid_centroids_df, dis_BldDen, by = "cenID")
 mergeBldDen <- mergeBldDen %>% dplyr::select(cenID, bld_100)
 
-# TRAFFIC DATA
+## == TRAFFIC DATA == ##
 traffic_volume_study_area_dir <- normalizePath(file.path(parent_directory, config$input_data$traffic_volume_study_area), winslash = "/")
-traffic <- readOGR(traffic_volume_study_area_dir)
+traffic <- st_read(traffic_volume_study_area_dir)
 traffic_sf <- st_as_sf(traffic) %>% st_transform(crs = st_crs(grid_centroids_3035))
 
 # Calculate average traffic for each buffer
@@ -128,7 +123,7 @@ for (i in seq_along(buffer_vars)) {
 traffic_per_buf <- merge_list %>% reduce(full_join, by = 'cenID') %>%
   dplyr::select(cenID, trafBuf25, trafBuf50)
 
-# NDVI EXTRACTION
+## == NDVI EXTRACTION == ##
 ndvi_tif_dir <- normalizePath(file.path(parent_directory, config$input_data$ndvi_map), winslash = "/")
 ndvi_files <- list.files(ndvi_tif_dir, pattern = '.tif$', full.names = TRUE)
 ndvi_stack <- stack(ndvi_files)
@@ -153,11 +148,60 @@ Cen100_GlobalPredictors[is.na(Cen100_GlobalPredictors)] <- 0
 
 # Add Longitude and Latitude
 Cen100_GlobalPredictors_wgs <- st_transform(Cen100_GlobalPredictors, crs = 4326) %>%
-  mutate(Longitude = unlist(map(geometry, 1)),
-         Latitude = unlist(map(geometry, 2)))
+  mutate(coords = st_coordinates(.)) %>%
+  mutate(Longitude = coords[, 1], Latitude = coords[, 2]) %>%
+  dplyr::select(-coords)  # Remove intermediate column
 
 # EXPORT OPTIONS
-sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_utrecht.gpkg"), driver = "GPKG", overwrite=TRUE)
+# optional: point feature dataset (representing the centroids of 100m x100m grid cells)
+sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_bayreuth.gpkg"), driver = "GPKG", overwrite=TRUE)
 
-write.csv(Cen100_GlobalPredictors_wgs %>% dplyr::select(-geometry), 
-          file.path(out_location_dir, "Cen100_GlobalPredictors_utrecht.csv"))
+## == export to grid that will be used for assigning model predictions == ##
+
+# Ensure both datasets are in the same CRS
+Cen100_GlobalPredictors <- st_transform(Cen100_GlobalPredictors, crs = st_crs(grid_sf))
+
+# Perform spatial join, keeping only the attributes from Cen100_GlobalPredictors
+Grid100_GlobalPredictors_Utrecht <- st_join(grid_sf, Cen100_GlobalPredictors, left = FALSE)
+
+# Save the output as a GeoPackage
+st_write(Grid100_GlobalPredictors_Utrecht, 
+         dsn = file.path(out_location_dir, "Grid100_GlobalPredictors-Bayreuth.gpkg"), 
+         driver = "GPKG", 
+         overwrite = TRUE)
+
+# export to csv
+
+# Transform Cen100_GlobalPredictors to WGS84 (EPSG:4326) to ensure correct notation
+Cen100_GlobalPredictors_wgs <- st_transform(Cen100_GlobalPredictors, crs = 4326)
+
+# Extract Longitude and Latitude
+Cen100_GlobalPredictors_wgs <- Cen100_GlobalPredictors_wgs %>%
+  mutate(coords = st_coordinates(.)) %>%
+  mutate(Longitude = coords[, 1], Latitude = coords[, 2]) %>%
+  dplyr::select(-coords)  # Remove intermediate column
+
+
+Grid100_GlobalPredictors_Utrecht <- as.data.frame(Cen100_GlobalPredictors_wgs)
+# If 'geometry' column is still present, remove it before writing to CSV
+if ("geom" %in% names(Grid100_GlobalPredictors_Utrecht)) {
+  Grid100_GlobalPredictors_Utrecht <- dplyr::select(Grid100_GlobalPredictors_Utrecht, -geom)
+}
+
+# Remove the 'cenID' column
+Grid100_GlobalPredictors_Utrecht <- dplyr::select(Grid100_GlobalPredictors_Utrecht, -cenID)
+
+# Check if Longitude and Latitude are missing, if so, extract from spatial object again
+if(!"Longitude" %in% colnames(Grid100_GlobalPredictors_Utrecht) | !"Latitude" %in% colnames(Grid100_GlobalPredictors_Utrecht)) {
+  # Add back Longitude and Latitude from the spatial object
+  Grid100_GlobalPredictors_Utrecht$Longitude <- st_coordinates(Cen100_GlobalPredictors)[,1]
+  Grid100_GlobalPredictors_Utrecht$Latitude <- st_coordinates(Cen100_GlobalPredictors)[,2]
+}
+
+Grid100_GlobalPredictors_Utrecht <- Grid100_GlobalPredictors_Utrecht %>%
+  rename(BldDen100 = bld_100)
+
+# Write to CSV
+write.csv(Grid100_GlobalPredictors_Utrecht, 
+          file.path(out_location_dir, "grid100_GlobalPredictors-Bayreuth.csv"), 
+          row.names = FALSE)
