@@ -18,6 +18,7 @@ config <- yaml::yaml.load_file(config_path)
 # Define output path
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
+
 # IMPORT GEODATA
 # Import area of interest at 100m resolution
 amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_grid), winslash = "/")

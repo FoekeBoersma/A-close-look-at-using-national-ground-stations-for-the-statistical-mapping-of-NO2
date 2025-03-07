@@ -145,11 +145,6 @@ sp_query_Amsterdam_map <- sp_query_Amsterdam %>%
   mutate(across(starts_with("diff_"), 
                 ~ ifelse(is.na(.), -9999, .)))
 
-print(head(sp_query_Amsterdam_map))
-# Define breaks
-breaks <- c(-10000, -10, 0, 0.5, 1, 2, 3, 5, 10, 20, 50, 1000000)
-breaks <- sort(unique(breaks))  # Ensure no duplicates and sorted
-diverging_palette <- c("grey", colorRampPalette(brewer.pal(11, "PiYG"))(length(breaks) - 3), "grey")
 
 # Apply the function to each model
 diff_vars <- c("diff_RF", "diff_LASSO", "diff_RIDGE", "diff_LightGBM", "diff_XGBoost", 
@@ -157,17 +152,6 @@ diff_vars <- c("diff_RF", "diff_LASSO", "diff_RIDGE", "diff_LightGBM", "diff_XGB
 fill_scale <- tm_scale(values = breaks)
 
 print(head(sp_query_Amsterdam))
-
-
-
-
-
-
-
-
-
-
-
 
 # Define breaks
 breaks = c(-10000, -100, -50, -20, -10, -5, 0, 5, 10, 20, 50, 100, 1000000)

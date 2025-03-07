@@ -19,7 +19,6 @@ library(viridis)
 library(yaml)
 library(extrafont)
 library(ggspatial)
-library(rgdal)
 
 ## == import data == ##
 # Connect to YAML file
@@ -37,9 +36,9 @@ local_ms_dir<- normalizePath(file.path(parent_directory, config07$input_data$mod
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
-grid100 = readOGR(all_models_dir)
+grid100 = st_read(all_models_dir)
 local_ms = read.csv(local_ms_dir, sep=';')
-amsterdam_shape <- readOGR(amsterdam_shape_dir)
+amsterdam_shape <- st_read(amsterdam_shape_dir)
 
 ## == data processing == ##
 local_ms_sf <- st_as_sf(local_ms, coords = c("Longitude", "Latitude"), crs = 4326)  # Set CRS to WGS 84 (EPSG:4326)
@@ -108,7 +107,7 @@ local_ms_with_grid_info_differences <- local_ms_with_grid_info_no_na %>%
 ## == visualization purposes == ##
 
 # Create the output directory for JPEGs
-output_jpg_dir <- file.path(out_location_dir, "local_differences_jpgs")
+output_jpg_dir <- file.path(out_location_dir, "local_differences_jpgs-march2025")
 if (!dir.exists(output_jpg_dir)) {
   dir.create(output_jpg_dir)
 }
