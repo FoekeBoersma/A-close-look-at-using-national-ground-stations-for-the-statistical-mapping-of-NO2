@@ -37,6 +37,17 @@ if (rename_columns) {
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
+# Create a new folder 'all_models_output' inside the output directory
+all_models_output_dir <- file.path(out_location_dir, "all_models_output")
+
+# Check if the folder exists; if not, create it
+if (!dir.exists(all_models_output_dir)) {
+  dir.create(all_models_output_dir, recursive = TRUE)
+}
+
+# Update output location directory
+out_location_dir <- all_models_output_dir
+
 global_df <- as.data.frame(global)
 
 colnames(global_df)
@@ -139,6 +150,41 @@ local_and_no2tif_grid = subset(local_and_no2tif_grid, select = -c(coords.x1,coor
 ## == export option == ##
 sf::st_write(local_and_no2tif_grid, dsn=file.path(out_location_dir,"local_and_no2tif_grid.gpkg"), driver = "GPKG")
 global_sf <- st_as_sf(global)
-global_sf <- global_sf[, c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE","predicted_NO2_LightGBM", "predicted_NO2_XGBoost")]
+# global_sf <- global_sf[, c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE","predicted_NO2_LightGBM", "predicted_NO2_XGBoost")]
+
+
 all_models <- st_join(local_and_no2tif_grid, global_sf, largest = T, left = T)
+print(colnames(all_models))
+
+# Extract non-geometry columns
+non_geom_cols <- setdiff(colnames(all_models), "geom")
+
+# Identify columns ending with .x or .y
+x_cols <- grep("\\.x$", non_geom_cols, value = TRUE)
+y_cols <- grep("\\.y$", non_geom_cols, value = TRUE)
+
+# Get base column names (without .x or .y)
+base_names <- unique(gsub("\\.x$|\\.y$", "", c(x_cols, y_cols)))
+
+# Select columns to keep (excluding .y versions)
+columns_to_keep <- setdiff(non_geom_cols, y_cols)
+
+# Rename .x columns to their base names
+new_col_names <- setNames(columns_to_keep, gsub("\\.x$", "", columns_to_keep))
+
+# Preserve geometry column separately
+geom_col <- st_geometry(all_models)
+
+
+
+# Convert `sf` object to `data.frame` and clean up columns
+all_models_cleaned <- all_models %>%
+  st_drop_geometry() %>%  # Remove spatial attributes temporarily
+  dplyr::select(all_of(columns_to_keep)) %>%  # Keep only required columns
+  dplyr::rename(!!!new_col_names)  # Rename .x columns
+
+# Convert back to `sf` object
+all_models <- st_as_sf(all_models_cleaned, geometry = geom_col)
+
 sf::st_write(all_models, dsn=file.path(out_location_dir,"all_models.gpkg"), driver = "GPKG")
+write_xlsx(all_models, file.path(out_location_dir,"all_models.xlsx"))

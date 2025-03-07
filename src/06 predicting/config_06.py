@@ -11,6 +11,6 @@ input_data = {
 }
 
 output = {
-    "output_map": "data/output/07 evaluating",
-    "output_map_excel": "data/output/07 evaluating/excel"
+    "output_map": "data/output/06 predicting/",
+    "output_map_excel": "data/output/06 predicting/excel/"
 }

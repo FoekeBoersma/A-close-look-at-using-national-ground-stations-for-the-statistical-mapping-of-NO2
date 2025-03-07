@@ -1,5 +1,5 @@
 input_data:
-  Amsterdam_NO2PredictionPerModel: data\input\TooBigData\Amsterdam\Amsterdam_NO2PredictionPerModel.shp
+  Amsterdam_NO2PredictionPerModel: data\output\06 predicting\Amsterdam_NO2PredictionPerModel.gpkg
   Bayreuth_NO2PredictionPerModel: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel.gpkg
   Bayreuth_NO2PredictionPerModel_ZI: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel_ZI.gpkg
   Hamburg_NO2PredictionPerModel: data\input\TooBigData\Hamburg\Hamburg_NO2PredictionPerModel.gpkg
@@ -9,8 +9,7 @@ input_data:
   modeling_dataset_global: \data\input\GlobalModelData\ModellingDataset-Global.csv
   modeling_dataset_local: data\input\LocalModelData\ModellingDataset-Local.csv
 
-  all_models: data\input\TooBigData\Amsterdam\all_models.gpkg
-
+  all_models: data\output\07 evaluating\all_models_output\all_models.gpkg
 
   predictedNO2_Linear: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_Linear.gpkg
   predictedNO2_Linear_SeparatingSpatialGroups: data\input\TooBigData\Amsterdam\LocalModels\predictedNO2_Linear_SeparatingSpatialGroups.gpkg

@@ -67,19 +67,7 @@ sp_query_Amsterdam <- spatial.select(Amsterdam_square_buffer, y = global, predic
 sp_query_Amsterdam
 
 # Map and export results
-vars <- c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE", "predicted_NO2_LightGBM", "predicted_NO2_XGBoost")
-breaks <- c(-100, 0, 15, 20, 25, 30, 35, 40, 45, 50, 100, 1000)
-palette_colors <- c("#808080", "#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026" , "#808080")
-
-for (model in vars) {
-map <- tm_shape(sp_query_Amsterdam) + tm_polygons(fill = model, 
-lwd = 0,  lwd.free = NA, palette = palette_colors, breaks=breaks, lwd.scale = tm_scale()) + tm_layout(legend.show = FALSE)  # Remove the legend
-tmap_save(map, 
-  width = 2000, 
-  height = 2000, 
-  units = "px", 
-  filename = file.path(out_location_dir, paste0("Global_", model, ".jpg")))
-}
+w
 # # Loop through the shapefiles and create a map for each
 # for (model in vars) {
   
