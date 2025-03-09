@@ -28,7 +28,7 @@ all_models_dir <- normalizePath(file.path(parent_directory, config07$input_data$
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
 #import dataset
-grid100 = readOGR(all_models_dir)
+grid100 = st_read(all_models_dir)
 
 #define color palette
 palette = c("red", "yellow", "green")

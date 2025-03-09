@@ -25,7 +25,7 @@ def create_new_map(map_name, location):
     except Exception as e:
         print(f"Error creating directory: {e}")
 
-def cross_validate_models(models, model_names, X, y, random_states, test_size=0.25):
+def cross_validate_models(models, model_names, X, y, random_states, test_size=0.1):
     """
     Perform cross-validation for multiple models and store performance metrics (RMSE, R2, MAE) for each model.
 
@@ -66,6 +66,8 @@ def cross_validate_models(models, model_names, X, y, random_states, test_size=0.
             # Split dataset into training and testing sets
             X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
             print(f"Random state: {random_state}")
+            print(f"training samples: {len(X_train)}")
+            print(f"testing samples: {len(X_test)}")
 
             # Train the model
             model.fit(X_train, Y_train)
@@ -101,6 +103,14 @@ def cross_validate_models_chars(
     models: List[Any], model_names: List[str], characteristics: List[pd.DataFrame],
     others: List[pd.DataFrame], char_names: List[str], random_states: List[int]
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    this function validates the performance of the model on each spatial group (urban, suburban rural) via n times bootstrapping (random states)
+    in this function, 30 samples are randomly chosen (per random state) in spatial group x
+    that will be used for testing while the remainder is used for training.
+    the not chosen samples are merged with the the other spatial groups that together is the training data.
+
+    """
+
     # Storage lists for model performance metrics
     Model_RMSE_scores = []
     Model_R2_scores = []
@@ -124,6 +134,8 @@ def cross_validate_models_chars(
                 not_used = char[~char.isin(chosen)].dropna()
                 
                 print("Chosen:", len(chosen))
+                print("Not used: ", len(not_used))
+                print("other: ", len(other))
                 print("Not Used, will be assigned to training data:", len(not_used))
                 
                 # Define test data

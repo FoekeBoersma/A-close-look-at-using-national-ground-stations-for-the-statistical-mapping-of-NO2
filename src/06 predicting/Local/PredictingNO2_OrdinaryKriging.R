@@ -48,7 +48,7 @@ data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
 data_3035 <- st_transform(data_sf, crs = 3035)
 
 # Import grid where predictions will be projected
-grid100 <- readOGR(config$input_data$local_predictors_amsterdam)
+grid100 <- st_read(config$input_data$local_predictors_amsterdam)
 
 # Convert the imported grid to an sf object
 grid100_sf <- st_as_sf(grid100)

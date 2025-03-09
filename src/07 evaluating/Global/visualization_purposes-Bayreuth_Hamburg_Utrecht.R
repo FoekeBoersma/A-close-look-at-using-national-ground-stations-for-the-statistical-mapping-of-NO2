@@ -4,12 +4,12 @@ library(terra)
 library(dplyr)
 library(spData)
 library(spDataLarge)
-library(rgdal)
 library(tmap)    # for static and interactive maps
 library(leaflet) # for interactive maps
 library(ggplot2) # tidyverse data visualization package
 library(spatialEco)
 library(yaml)
+library(sp)
 
 ## == import spatial datasets == ##
 
@@ -35,6 +35,14 @@ grid100_Utrecht <- st_read(Utrecht_NO2PredictionPerModel_dir)
 # Define output directory
 out_location_dir <- normalizePath(file.path(parent_directory, config07$out_location), winslash = "/")
 
+
+# create new map inside the output directory and update variable out_location_dir
+out_location_dir <- file.path(out_location_dir, "maps_bayreuth_hh_utrecht")
+
+# check if folder exists; if not, create it
+if (!dir.exists(out_location_dir)) {
+  dir.create(out_location_dir, recursive = TRUE)
+}
 #to datadrame
 grid100_Utrecht_df <- as.data.frame(grid100_Utrecht)
 
@@ -44,24 +52,29 @@ grid100_HH <- st_as_sf(grid100_HH)
 grid100_Utrecht <- st_as_sf(grid100_Utrecht)
 
 colnames(grid100_Utrecht_df)
-#create list with variables to visualize
-vars = c("predicted_NO2_RF",       "predicted_NO2_LASSO" ,  
-         "predicted_NO2_RIDGE"  ,  "predicted_NO2_LightGBM" ,"predicted_NO2_XGBoost")
 
-length(vars)
-breaks = c(-100, 0, 15, 20, 25, 30, 35, 40, 45, 50, 100, 1000)
-#manually define color palette
-palette <- c("grey", "palegreen4", "palegreen3","palegreen","greenyellow",  "yellow", "gold", "darkorange", "red", "darkred", "grey")
+# Map and export results
+vars <- c("predicted_NO2_RF", "predicted_NO2_LASSO", "predicted_NO2_RIDGE", "predicted_NO2_LightGBM", "predicted_NO2_XGBoost")
+breaks <- c(-100, 0, 15, 20, 25, 30, 35, 40, 45, 50, 100, 1000)
+# palette_colors <- c("grey", "palegreen4", "palegreen3", "palegreen", "greenyellow", "yellow", "gold", "darkorange", "red", "darkred", "grey")
+palette_colors <- c("#808080", "#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026" , "#808080")
 
+# Loop through each variable and generate maps
+for (model in vars) {
+  print(model)
+  # Define output filenames
+  filename_jpg <- file.path(out_location_dir, paste0("Bayreuth_", model, ".jpg"))
 
-# loop through the shapefiles and create a map for each - Bayreuth
-for (i in seq_along(vars)) {
-  vars[i]
-  map <- tm_shape(grid100_Bayreuth) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
-  model = vars[i]
-  filename <- file.path(out_location_dir, paste0("Bayreuth_", model, ".jpg"))
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
+  # Create the map
+  tm <- tm_shape(grid100_Bayreuth) +
+    tm_fill(model, palette = palette_colors, breaks = breaks, legend.show = FALSE) +
+    tm_layout(legend.outside = FALSE, frame = TRUE)
+
+  # Save as JPG
+  tmap_save(tm, filename_jpg, width = 10, height = 10, dpi = 300)
 }
+
+print("Maps have been saved successfully!")
 
 
 ## == zoomed in version (Bayreuth) == ##
@@ -97,42 +110,63 @@ grid100_Bayreuth <- st_transform(grid100_Bayreuth, crs=3035)
 #export option
 sf::st_write(poly_3035, dsn=file.path(out_location_dir,"poly_3035.gpkg"), driver = "GPKG", append = FALSE)
 
-
-#spatial query035
+#spatial query
 sp_query <-spatial.select(poly_3035,y = grid100_Bayreuth,predicate = "contains")
 
 sf::st_write(sp_query, dsn = file.path(out_location_dir, "Bayreuth_ZI.gpkg"), driver = "GPKG", append = FALSE)
 
+## == visualization == ##
 
 #manual option: import Bayreuth ZI (two Bayreuth versions are available: a zoomed out- and zoomed in-version where we use the latter now.
-grid100_Bayreuth_ZI = readOGR(Bayreuth_NO2PredictionPerModel_ZI_dir)
-
+grid100_Bayreuth_ZI = st_read(Bayreuth_NO2PredictionPerModel_ZI_dir)
 
 # loop through the shapefiles and create a map for each - Bayreuth
 for (i in seq_along(vars)) {
   vars[i]
-  map <- tm_shape(grid100_Bayreuth_ZI) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
+  map <- tm_shape(grid100_Bayreuth_ZI) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE, border.col = NA,
+      lwd.scale = tm_scale())
   model = vars[i]
-  filename <- file.path(out_location_dir, paste0("Bayreuth_ZI_", model, ".jpg"))
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
+  filename_jpg <- file.path(out_location_dir, paste0("Bayreuth_ZI_", model, ".jpg"))
+    # Create the map
+  tm <- tm_shape(grid100_Bayreuth_ZI) +
+    tm_fill(model, palette = palette_colors, breaks = breaks, legend.show = FALSE) +
+    tm_layout(legend.outside = FALSE, frame = TRUE)
+
+  # Save as JPG
+  tmap_save(tm, filename_jpg, width = 10, height = 10, dpi = 300)
 }
 
 # loop through the shapefiles and create a map for each - Hamburg
 for (i in seq_along(vars)) {
   vars[i]
-  map <- tm_shape(grid100_HH) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
+  map <- tm_shape(grid100_HH) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE, border.col = NA,
+      lwd.scale = tm_scale())
   model = vars[i]
-  filename <- file.path(out_location_dir, paste0("Hamburg_", model, ".jpg"))
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
+  filename_jpg <- file.path(out_location_dir, paste0("Hamburg_", model, ".jpg"))
+    # Create the map
+  tm <- tm_shape(grid100_HH) +
+    tm_fill(model, palette = palette_colors, breaks = breaks, legend.show = FALSE) +
+    tm_layout(legend.outside = FALSE, frame = TRUE)
+
+  # Save as JPG
+  tmap_save(tm, filename_jpg, width = 10, height = 10, dpi = 300)
 }
 
 # loop through the shapefiles and create a map for each - Utrecht
 for (i in seq_along(vars)) {
   vars[i]
-  map <- tm_shape(grid100_Utrecht) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE)
+  map <- tm_shape(grid100_Utrecht) + tm_fill(col = vars[i], breaks=breaks, palette=palette, legend.show = FALSE, border.col = NA,
+      lwd.scale = tm_scale())
   model = vars[i]
-  filename <- file.path(out_location_dir, paste0("Utrecht_", model, ".jpg"))
-  tmap_save(map, width = 1000, height = 1000, units="px", filename = filename)
+  filename_jpg <- file.path(out_location_dir, paste0("Utrecht_", model, ".jpg"))
+    # Create the map
+  tm <- tm_shape(grid100_Utrecht) +
+    tm_fill(model, palette = palette_colors, breaks = breaks, legend.show = FALSE) +
+    tm_layout(legend.outside = FALSE, frame = TRUE)
+
+  # Save as JPG
+  tmap_save(tm, filename_jpg, width = 10, height = 10, dpi = 300)
+
 }
 
 # tm_shape(grid100_Bayreuth) + tm_fill(col = "predicted_NO2_LASSO", breaks=breaks, palette=palette, legend.show = FALSE)

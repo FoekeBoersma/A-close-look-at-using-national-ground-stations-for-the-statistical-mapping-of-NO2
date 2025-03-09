@@ -66,7 +66,7 @@ data_32 <- as(data_32, 'Spatial')
 
 # define grid for projection (covariance)
 # import AOI
-grid100 = readOGR(grid100_amsterdam_dir)
+grid100 = st_read(grid100_amsterdam_dir)
 print(head(grid100))
 grid100 <- st_as_sf(grid100)
 #convert grid to spatialPolygonsDataframe

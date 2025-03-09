@@ -1,19 +1,30 @@
-#import necessary modules
+# import modules
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_absolute_error
-import os
+#import necessary module(s) for random forest
+from sklearn.ensemble import RandomForestRegressor
+#import necessary module(s) for LASSO
+from sklearn.linear_model import Lasso
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+#import necessary module(s) for RIDGE
+from sklearn.linear_model import Ridge, RidgeCV, Lasso, LassoCV
+#import necessary module(s) for LightGBM
+import lightgbm as lgb
+#import necessary module(s) for XGBoost
+import xgboost as xgb
 import sys
+import os
 import os.path as path
 from functions import (rmse)
-import xgboost as xgb
-from pprint import pprint
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
 
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__))
-# Define the path to the directory containing config_05.py (one level up)
+# Define the path to the directory containing config_03.py (one level up)
 config_directory = os.path.abspath(os.path.join(current_directory, '..'))
 # Append the directory to sys.path
 sys.path.append(config_directory)
@@ -23,6 +34,7 @@ try:
     import config_05
 except ModuleNotFoundError as e:
     print(f"Error importing module: {e}")
+
 
 dataset = config_05.input_dataset['globaldataset']
 output_map = config_05.output['output_map']
@@ -35,6 +47,8 @@ output_location = data_path  + output_map
 #import dataset for modeling
 df = pd.read_csv(data_path + dataset, sep=',')
 
+
+
 #remove unique idenifier & geodata
 df = df.drop(['Unnamed: 0', 'Longitude', 'Latitude'], axis=1)
 #replace NaN's with 0's
@@ -43,6 +57,9 @@ df = df.fillna(0)
 y = df['mean_value_NO2'] #specify target
 x = df.drop(['mean_value_NO2'], axis=1) #predictors
 feature_list = list(x.columns)
+
+print("Features used:", feature_list)
+
 
 ## == CONSTRUCTING RANDOM FOREST == ##
 
@@ -56,59 +73,60 @@ print('Training Labels Shape:', Y_train.shape)
 print('Testing Features Shape:', X_test.shape)
 print('Testing Labels Shape:', Y_test.shape)
 
-## == EVALUATING PERFORMANCE OF XGBOOST MODEL == ##
-xg_reg = xgb.XGBRegressor()
-xg_reg.fit(X_train, Y_train)
+# define the n_estimators to test
+n_estimators_range = [10, 50, 100, 500, 1000, 2000, 5000, 7500, 10000, 25000, 50000, 75000]
+performance_results = []
 
-##DEFINING ORIGINAL Y-VALUES AND PREDICTED Y-VALUES
-expected_y  = Y_test
-predicted_y = xg_reg.predict(X_test)
+# Loop through different estimator values
+for n in n_estimators_range:
+    xg_reg = xgb.XGBRegressor(gamma = 5,  reg_alpha =2, reg_lambda=0, max_depth = 5, learning_rate = 0.0005, n_estimators=n, random_state=42)
+    ## == EVALUATING PERFORMANCE OF XGBOOST MODEL == ##
+    xg_reg.fit(X_train, Y_train)
 
-expected_y_tr  = Y_train
-predicted_y_tr = xg_reg.predict(X_train)
+    # predictions
+    y_pred = xg_reg.predict(X_test)
 
-# Open a file in append mode
-with open(output_location  + model_metrics_xgboost , "a") as file:
-    # Writing the results to the file
-    file.write("training rmse: " + str(rmse(predicted_y_tr, expected_y_tr)) + "\n")
-    file.write("testing rmse: " + str(rmse(predicted_y, expected_y)) + "\n\n")
+    # Evaluate performance
+    r2 = r2_score(Y_test, y_pred)
+    rmse_value = rmse(Y_test, y_pred)
 
-    file.write("R2 score training data: " + str(r2_score(expected_y_tr, predicted_y_tr)) + "\n")
-    file.write("R2 score testing data: " + str(r2_score(expected_y, predicted_y)) + "\n\n")
-
-    file.write("MAE training data: " + str(mean_absolute_error(expected_y_tr, predicted_y_tr)) + "\n")
-    file.write("MAE testing data: " + str(mean_absolute_error(expected_y, predicted_y)) + "\n")
+    # store results
+    performance_results.append([n, r2, rmse_value])
+    print(f"n_estimators: {n}, RMSE: {rmse_value:.4f}, R²: {r2:.4f}")
 
 
-## == HYPERPARAMETER TUNING == ##
-#VERIFYING CURRENT Xgboost HYPERPARAMETERS 
+# Convert results to DataFrame
+performance_df = pd.DataFrame(performance_results, columns=['n_estimators', 'R2', 'RMSE'])
 
-# Look at parameters used by our current forest
-print('Parameters currently in use:\n')
-pprint(xg_reg.get_params())
+# Save CSV
+csv_path = os.path.join(output_location, "xgboost_performance.csv")
+performance_df.to_csv(csv_path, index=False)
+print(f"Performance results saved to {csv_path}")
 
-#Apply different parameter settings
+# Create subplots: 1 row, 2 columns
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-xgboost_advanced = xgb.XGBRegressor(gamma = 5,  reg_alpha =2, reg_lambda=0, max_depth = 5, learning_rate = 0.002, n_estimators=2000, random_state=42)
-xgboost_advanced.fit(X_train, Y_train)
+# First plot: R² Score
+ax1.plot(performance_df['n_estimators'], performance_df['R2'], marker='o', linestyle='-', color='tab:blue', label="R² Score")
+ax1.set_xlabel("Number of Estimators")
+ax1.set_ylabel("R² Score", color='tab:blue')
+ax1.set_title("XGBoost R² vs. Number of Estimators")
+ax1.set_xscale("log")
+ax1.grid(True)
 
-##DEFINING ORIGINAL Y-VALUES AND PREDICTED Y-VALUES
-expected_y_xgboost  = Y_test
-predicted_y_xgboost_advanced = xgboost_advanced.predict(X_test)
+# Second plot: RMSE Score
+ax2.plot(performance_df['n_estimators'], performance_df['RMSE'], marker='s', linestyle='--', color='tab:red', label="RMSE Score")
+ax2.set_xlabel("Number of Estimators")
+ax2.set_ylabel("RMSE Score", color='tab:red')
+ax2.set_title("XGBoost RMSE vs. Number of Estimators")
+ax2.set_xscale("log")
+ax2.grid(True)
 
-expected_y_train_xgboost = Y_train
-predicted_y_train_xgboost_advanced = xgboost_advanced.predict(X_train)
+# Adjust layout
+fig.tight_layout()
 
-
-# Open a file in append mode
-with open(output_location  + model_metrics_xgboost , "a") as file:
-    # Writing the results to the file
-    file.write("training rmse (ADVANCED): " + str(rmse(predicted_y_train_xgboost_advanced, Y_train)) + "\n")
-    file.write("testing rmse (ADVANCED): " + str(rmse(predicted_y_xgboost_advanced, Y_test)) + "\n\n")
-
-    file.write("R2 score training data (ADVANCED): " + str(r2_score(Y_train, predicted_y_train_xgboost_advanced)) + "\n")
-    file.write("R2 score testing data (ADVANCED): " + str(r2_score(Y_test, predicted_y_xgboost_advanced)) + "\n\n")
-
-    file.write("MAE training data (ADVANCED): " + str(mean_absolute_error(Y_train, predicted_y_train_xgboost_advanced)) + "\n")
-    file.write("MAE testing data (ADVANCED): " + str(mean_absolute_error(Y_test, predicted_y_xgboost_advanced)) + "\n")
+# Save the figure
+jpg_path = os.path.join(output_location, "xgboost_performance.jpg")
+plt.savefig(jpg_path, dpi=300)
+plt.show()  # Display the plots
 

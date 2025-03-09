@@ -1,0 +1,10 @@
+geopandas==0.13.2
+lightgbm==4.6.0
+matplotlib==3.7.2
+numpy==1.24.4
+pandas==2.0.3
+scikit_learn==1.6.1
+seaborn==0.13.2
+shap==0.42.1
+xgboost==1.7.6
+openpyxl

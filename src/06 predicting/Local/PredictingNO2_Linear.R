@@ -45,7 +45,7 @@ data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
 data_3035 <- st_transform(data_sf, crs = 3035)
 
 # Import the prediction grid for Amsterdam
-grid100 <- readOGR(config$input_data$local_predictors_amsterdam)
+grid100 <- st_read(config$input_data$local_predictors_amsterdam)
 
 # Convert the grid into an sf object and add a unique key for joining datasets
 grid100_sf <- st_as_sf(grid100)

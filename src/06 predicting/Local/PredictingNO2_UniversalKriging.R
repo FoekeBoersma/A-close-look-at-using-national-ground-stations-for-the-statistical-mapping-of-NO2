@@ -60,7 +60,7 @@ data_32 <- as(data_32, 'Spatial')
 
 # define grid for projection 
 # import AOI
-grid100 = readOGR(config$input_data$local_predictors_amsterdam)
+grid100 = st_read(config$input_data$local_predictors_amsterdam)
 
 #convert to sf to use function "rename"
 grid100 <- st_as_sf(grid100)

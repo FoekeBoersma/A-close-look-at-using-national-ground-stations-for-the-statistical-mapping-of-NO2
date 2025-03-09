@@ -39,7 +39,7 @@ stations <- read.csv(modeling_dataset_local_processed_dir, sep=';')
 #import roads
 processed_traffic_dataset <- config$input$traffic_volume_study_area
 processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/") 
-roads <- readOGR(processed_traffic_dataset_dir )
+roads <- st_read(processed_traffic_dataset_dir )
 
 print(stations)
 #make sf

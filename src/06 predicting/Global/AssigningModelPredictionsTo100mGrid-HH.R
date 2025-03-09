@@ -2,15 +2,11 @@
 library(sf)
 library(raster)
 library(ggplot2)
-library(rgeos)
 library(tidyverse)
 library(sp)
-library(leaflet)
 library(terra)
-library(stars)
 library(dplyr)
 library(yaml)
-library(rgdal)
 library(nngeo)     # For finding nearest features
 
 # Connect to YAML configuration file
@@ -23,10 +19,9 @@ config <- yaml::yaml.load_file(config_path)
 parent_directory <- dirname(dirname(dirname(dirname(current_dir))))
 out_location_dir <- normalizePath(file.path(parent_directory, config$out_location), winslash = "/")
 
-# IMPORT GEODATA
 # Import area of interest at 100m resolution
 hamburg100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$hamburg100m_grid), winslash = "/")
-grid <- readOGR(hamburg100m_grid_dir)
+grid <- st_read(hamburg100m_grid_dir)
 
 ## == data processing == ##
 

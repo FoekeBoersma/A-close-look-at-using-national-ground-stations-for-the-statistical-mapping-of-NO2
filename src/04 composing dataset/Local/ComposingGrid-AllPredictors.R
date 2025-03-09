@@ -29,7 +29,7 @@ amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, amsterdam100
 ## == IMPORT GEODATA == ##
 
 #import area of interest at 100m resolution
-grid100_Amsterdam <- readOGR(amsterdam100m_grid_dir)
+grid100_Amsterdam <- st_read(amsterdam100m_grid_dir)
 
 ## == data processing == ##
 
@@ -127,7 +127,7 @@ print(centroids_5predictors)
 processed_traffic_dataset <- config$input$traffic_volume_study_area
 processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/")
 
-traffic <- readOGR(processed_traffic_dataset_dir)
+traffic <- st_read(processed_traffic_dataset_dir)
 traffic_sf <- st_as_sf(traffic)
 #similar crs are needed
 traffic_sf <- st_transform(traffic_sf, crs=st_crs(grid_centroids_3035))

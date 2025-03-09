@@ -2,15 +2,11 @@
 library(sf)
 library(raster)
 library(ggplot2)
-library(rgeos)
 library(tidyverse)
 library(sp)
-library(leaflet)
 library(terra)
-library(stars)
 library(dplyr)
 library(yaml)
-library(rgdal)
 library(nngeo)     # For finding nearest features
 
 # Connect to YAML configuration file
@@ -26,14 +22,14 @@ out_location_dir <- normalizePath(file.path(parent_directory, config$out_locatio
 # IMPORT GEODATA
 # Import area of interest at 100m resolution
 utrecht100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$utrecht100m_grid), winslash = "/")
-grid <- readOGR(utrecht100m_grid_dir)
+grid <- st_read(utrecht100m_grid_dir)
 
 ## == data processing == ##
 
 #make spatial
 grid_sf <- st_as_sf(grid)
-
-#Modelpredictions
+modelPredictions$Longitude <- as.numeric(as.character(modelPredictions$Longitude))
+modelPredictions$Latitude <- as.numeric(as.character(modelPredictions$Latitude))
 modelPredictions <- read.csv(file.path(parent_directory, config$input_data$utrecht_predicting_no2_allmodels))
 modelPredictions_sf <- st_as_sf(modelPredictions, coords=c("Longitude", "Latitude"), crs=4326)
 #make crs similar
