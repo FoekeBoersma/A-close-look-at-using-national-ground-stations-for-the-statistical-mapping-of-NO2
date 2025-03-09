@@ -49,7 +49,7 @@ traffic_volume_netherlands_dataset <- config$global$traffic_volume_netherlands
 traffic_volume_netherlands_dir <- normalizePath(file.path(parent_directory,traffic_volume_netherlands_dataset ), winslash = "/")
 
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
-roads_NL <- readOGR(traffic_volume_netherlands_dir)
+roads_NL <- st_read(traffic_volume_netherlands_dir)
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
 

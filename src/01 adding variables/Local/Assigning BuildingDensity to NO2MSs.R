@@ -38,7 +38,7 @@ out_location_dir <- normalizePath(file.path(parent_directory, out_location ), wi
 #IMPORT GEODATA
 
 #import shapefile of buildingsNL 
-buildings <- readOGR(buildings_relative)
+buildings <- st_read(buildings_relative)
 
 ## == IMPORT NO2 MEASUREMENT STATIONS == ##
 no2_dataset <- config$local$no2

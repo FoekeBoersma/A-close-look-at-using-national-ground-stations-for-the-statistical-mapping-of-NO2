@@ -72,7 +72,7 @@ data_3035$spachar <- ifelse(
 ## == Import Grid for Predictions == ##
 
 # Import the grid where predictions will be projected
-grid100 <- readOGR(config$input_data$local_predictors_amsterdam)
+grid100 <- st_read(config$input_data$local_predictors_amsterdam)
 
 # Convert the grid to an sf object and create a unique key
 grid100_sf <- st_as_sf(grid100)

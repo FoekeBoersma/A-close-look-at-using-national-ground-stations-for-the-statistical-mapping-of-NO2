@@ -119,7 +119,7 @@ prec <- prec %>% dplyr::select(-contains("coords"))
 #import building density data
 processed_building_dataset <- config_02$global$building_processed
 processed_building_dataset_dir <- normalizePath(file.path(parent_directory, processed_building_dataset ), winslash = "/")
-buildingdensity_ms <- readOGR(processed_building_dataset_dir)
+buildingdensity_ms <- st_read(processed_building_dataset_dir)
 #make spatial
 buildingdensity_ms_sf <- st_as_sf(buildingdensity_ms)
 
@@ -143,7 +143,7 @@ ms_prec_bd <- subset(ms_prec_bd, select = -c(M_id.y) )
 #import NDVI data
 processed_ndvi_dataset <- config_02$global$ndvi_processed
 processed_ndvi_dataset_dir <- normalizePath(file.path(parent_directory, processed_ndvi_dataset ), winslash = "/")
-NDVI_ms <- readOGR(processed_ndvi_dataset_dir ) #via AssignNDVIToNO2MSs.R
+NDVI_ms <- st_read(processed_ndvi_dataset_dir ) #via AssignNDVIToNO2MSs.R
 #make spatial
 NDVI_ms <- st_as_sf(NDVI_ms)
 NDVI_ms <- st_transform(NDVI_ms, crs=st_crs(ms_prec_bd))
@@ -168,7 +168,7 @@ ms_prec_bd_ndvi <- subset(ms_prec_bd_ndvi, select = -c(coords_x1, coords_x2, FID
 #import traffic volume data
 processed_traffic_dataset <- config_02$global$traffic_processed
 processed_traffic_dataset_dir <- normalizePath(file.path(parent_directory, processed_traffic_dataset ), winslash = "/")
-trafficvolume_ms <- readOGR(processed_traffic_dataset_dir) #via "Assigning TrafficVolume to NO2MSs.R"
+trafficvolume_ms <- st_read(processed_traffic_dataset_dir) #via "Assigning TrafficVolume to NO2MSs.R"
 #make spatial
 trafficvolume_ms <- st_as_sf(trafficvolume_ms)
 trafficvolume_ms <- st_transform(trafficvolume_ms, crs=st_crs(ms_prec_bd_ndvi))

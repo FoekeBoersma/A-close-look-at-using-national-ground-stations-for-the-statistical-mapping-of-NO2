@@ -206,7 +206,7 @@ traffic_netherlands_relative <- config$global$traffic_volume_netherlands
 ## == IMPORT ROADS DATASET, INCLUDING TRAFFIC VOLUME INFORMATION == ##
 roads_NL_dir <- normalizePath(file.path(parent_directory, traffic_germany_relative), winslash = "/")
 
-roads_NL <- readOGR(roads_NL_dir )
+roads_NL <- st_read(roads_NL_dir )
 
 #filter to only Dutch NO2 stations
 #import Netherlands shapefile

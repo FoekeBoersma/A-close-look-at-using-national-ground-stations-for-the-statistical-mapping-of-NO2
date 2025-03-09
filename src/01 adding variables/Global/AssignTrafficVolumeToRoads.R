@@ -52,7 +52,7 @@ out_location_dir <- normalizePath(file.path(parent_directory, out_location ), wi
 #to high uncertainty.
 
 #import motorways and primary roads in Germany
-roads_Germany <- readOGR(roads_Germany_relative)
+roads_Germany <- st_read(roads_Germany_relative)
 
 #make spatial via sf package
 roads_Germany_sf <- st_as_sf(roads_Germany)
@@ -74,7 +74,7 @@ roads_Germany_3035 <- roads_Germany_3035 %>% dplyr::select(type, geometry) #type
 ## == TRAFFIC DATA == ## (point features)
 jawe_relative <- config$global$jawe
 #Germany traffic data (Jawe) - Average daily traffic (Mo-So), All traffic type, measured over 2017.
-Jawe <- readOGR(jawe_relative)
+Jawe <- st_read(jawe_relative)
 
 #convert to sf
 Jawe_sf <- st_as_sf(Jawe, coords = c("long", "lat"))
@@ -223,7 +223,7 @@ motorway_primary_NL <- config$global$motorway_primary_NL
 motorway_primary_NL_relative <- normalizePath(file.path(parent_directory, motorway_primary_NL ), winslash = "/")
 
 
-roadsNL <- readOGR(dsn = motorway_primary_NL_relative)
+roadsNL <- st_read(dsn = motorway_primary_NL_relative)
 
 ## == IMPORT TRAFFIC COUNTING STATIONS == ##
 ## == A: VALUES 
@@ -280,7 +280,7 @@ tc_stations_avght <- tc_stations_any_vehicle_merged %>%
 ## == B: COORDINATES COUNTING STATIONS
 Telpunten_WGS84<- config$global$Telpunten_WGS84
 Telpunten_WGS84_relative <- normalizePath(file.path(parent_directory, Telpunten_WGS84), winslash = "/")
-location_tc_stations <- readOGR(dsn = Telpunten_WGS84_relative)
+location_tc_stations <- st_read(dsn = Telpunten_WGS84_relative)
 location_tc_stations <- as.data.frame(location_tc_stations)
 location_tc_stations <- location_tc_stations %>% rename(id_meetlocatie = dgl_loc)
 
