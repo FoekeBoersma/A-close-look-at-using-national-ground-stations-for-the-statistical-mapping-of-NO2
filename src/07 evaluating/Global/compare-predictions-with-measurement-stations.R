@@ -111,8 +111,17 @@ process_city <- function(city_name, no2_data_path, shape_path) {
 
   ## == visualization purposes == ##
   diff_columns <- c("diff_RF", "diff_LASSO", "diff_RIDGE", "diff_LightGBM", "diff_XGBoost")
+  
 
   for (col in diff_columns) {
+    # Calculate statistics
+    stats <- global_ms_with_city_info_differences %>%
+      summarize(
+        min = min(.data[[col]], na.rm = TRUE),
+        max = max(.data[[col]], na.rm = TRUE),
+        mean = mean(.data[[col]], na.rm = TRUE),
+        median = median(.data[[col]], na.rm = TRUE)
+      )
     p <- ggplot(global_ms_with_city_info_differences) +
       geom_sf(aes_string(fill = col), color = "black", shape = 21, size = 3, stroke = 1) +
       geom_sf(data = city_shape, fill = NA, color = "black", size = 1.5) +
@@ -125,8 +134,13 @@ process_city <- function(city_name, no2_data_path, shape_path) {
       ) +
       theme_minimal() +
       theme(legend.position = "right", plot.title = element_text(hjust = 0.5)) +
-      labs(title = paste("Differences in Model Prediction vs. global observations in", city_name, "(n =", nrow(global_ms_with_city_info_differences), ")"))
-
+      labs(title = paste("Differences in Model Prediction vs. global observations in", city_name, "(n =", nrow(global_ms_with_city_info_differences), ")"),
+      caption = paste0(
+        "Min: ", round(stats$min, 2), 
+        " | Max: ", round(stats$max, 2), 
+        " | Mean: ", round(stats$mean, 2), 
+        " | Median: ", round(stats$median, 2)
+      ))
     output_jpg_path <- file.path(output_jpg_dir, paste0(city_name, "_", col, "_boundary.jpg"))
     ggsave(output_jpg_path, plot = p, width = 10, height = 8, dpi = 300)
   }

@@ -25,7 +25,7 @@ def create_new_map(map_name, location):
     except Exception as e:
         print(f"Error creating directory: {e}")
 
-def cross_validate_models(models, model_names, X, y, random_states, test_size=0.25):
+def cross_validate_models(models, model_names, X, y, random_states, test_size=0.1):
     """
     Perform cross-validation for multiple models and store performance metrics (RMSE, R2, MAE) for each model.
 

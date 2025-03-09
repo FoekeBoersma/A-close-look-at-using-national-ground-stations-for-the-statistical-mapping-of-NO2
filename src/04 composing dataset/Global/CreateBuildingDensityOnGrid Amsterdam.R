@@ -21,7 +21,8 @@ out_location_dir <- normalizePath(file.path(parent_directory, config$out_locatio
 
 ## == import geodata == ## 
 # Import area of interest at 100m resolution
-amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_grid), winslash = "/")
+# amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_grid), winslash = "/")
+amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_greater_area), winslash = "/")
 grid <- st_read(amsterdam100m_grid_dir)
 
 ## ==  Data processing == ##
@@ -85,7 +86,9 @@ centroids_5predictors <- centroids_5predictors %>%
                 trop_mean_filt)
 
 ## == BUILDING DENSITY (SPATIAL JOIN) == ##
-grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_amsterdam)
+# grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_amsterdam)
+grid_bldden_100m_path <- file.path(config$input_data$grid_bldden_amsterdam_greater_area)
+
 dis <- st_read(grid_bldden_100m_path)
 
 # Ensure both layers have the same CRS
@@ -97,12 +100,26 @@ basic_join_result <- st_join(grid_centroids_sf, dis, join = st_nearest_feature)
 print(head(basic_join_result))
 
 # Clean up the result by keeping only necessary columns and renaming them
-mergeBldDen <- basic_join_result %>%
-  dplyr::select(cenID.x, bld_100) %>%  # Keep cenID.x and bld_100 columns
-  rename(cenID = cenID.x, BldDen100 = bld_100)  # Rename cenID.x to cenID and bld_100 to bldDen100
+# Check if the required columns exist in basic_join_result
+if ("cenID.x" %in% colnames(basic_join_result) && "bld_100" %in% colnames(basic_join_result)) {
+  mergeBldDen <- basic_join_result %>%
+    dplyr::select(cenID.x, bld_100) %>%  # Keep cenID.x and bld_100 columns
+    rename(cenID = cenID.x, BldDen100 = bld_100)  # Rename columns
+  
+  mergeBldDen <- as.data.frame(mergeBldDen)  # Convert to dataframe
+} else {
+  # Skip if the required columns do not exist
+  message("The required columns 'cenID.x' and 'bld_100' are not found in the dataset. Skipping operation.")
+  mergeBldDen <- basic_join_result
+}
+
 
 mergeBldDen <- as.data.frame((mergeBldDen))
-mergeBldDen <- subset(mergeBldDen, select = -c(geometry))
+
+if ("geometry" %in% colnames(mergeBldDen)) {
+  mergeBldDen <- mergeBldDen %>%
+    dplyr::select(-geometry)  # Remove the geometry column if it exists
+}
 
 print(head(mergeBldDen))
 ## == TRAFFIC DATA == ##
@@ -172,7 +189,7 @@ print(head(Cen100_GlobalPredictors_wgs))
 Cen100_GlobalPredictors <- Cen100_GlobalPredictors[, !names(Cen100_GlobalPredictors) %in% "fid"]
 # EXPORT OPTIONS
 # optional: point feature dataset (representing the centroids of 100m x100m grid cells)
-sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_amsterdam.gpkg"), driver = "GPKG", overwrite=TRUE)
+sf::st_write(Cen100_GlobalPredictors, dsn = file.path(out_location_dir, "Cen100_GlobalPredictors_amsterdam_ga.gpkg"), driver = "GPKG", overwrite=TRUE)
 
 ## == export to grid that will be used for assigning model predictions == ##
 print(colnames(Cen100_GlobalPredictors))
@@ -182,15 +199,15 @@ Cen100_GlobalPredictors <- st_transform(Cen100_GlobalPredictors, crs = st_crs(gr
 
 # Perform spatial join, keeping only the attributes from Cen100_GlobalPredictors
 Grid100_GlobalPredictors_amsterdam <- st_join(grid_sf, Cen100_GlobalPredictors, left = FALSE)
-Grid100_GlobalPredictors_amsterdam <- Grid100_GlobalPredictors_amsterdam %>% select(-fid)
+if ("fid" %in% colnames(Grid100_GlobalPredictors_amsterdam)) {
+  Grid100_GlobalPredictors_amsterdam <- Grid100_GlobalPredictors_amsterdam %>% select(-fid)
+}
 
 # Save the output as a GeoPackage
 st_write(Grid100_GlobalPredictors_amsterdam, 
-         dsn = file.path(out_location_dir, "Grid100_GlobalPredictors-amsterdam1.gpkg"), 
+         dsn = file.path(out_location_dir, "Grid100_GlobalPredictors-amsterdam_ga.gpkg"), 
          driver = "GPKG", 
          overwrite = TRUE)
-
-# export to csv
 
 # Transform Cen100_GlobalPredictors to WGS84 (EPSG:4326) to ensure correct notation
 Cen100_GlobalPredictors_wgs <- st_transform(Cen100_GlobalPredictors, crs = 4326)
@@ -206,6 +223,10 @@ Grid100_GlobalPredictors_amsterdam <- as.data.frame(Cen100_GlobalPredictors_wgs)
 # If 'geometry' column is still present, remove it before writing to CSV
 if ("geometry" %in% names(Grid100_GlobalPredictors_amsterdam)) {
   Grid100_GlobalPredictors_amsterdam <- dplyr::select(Grid100_GlobalPredictors_amsterdam, -geometry)
+}
+
+if ("geom" %in% names(Grid100_GlobalPredictors_amsterdam)) {
+  Grid100_GlobalPredictors_amsterdam <- dplyr::select(Grid100_GlobalPredictors_amsterdam, -geom)
 }
 
 # Remove the 'cenID' column
@@ -224,5 +245,5 @@ print(colnames(Grid100_GlobalPredictors_amsterdam))
 
 # Write to CSV
 write.csv(Grid100_GlobalPredictors_amsterdam, 
-          file.path(out_location_dir, "grid100_GlobalPredictors-amsterdam.csv"), 
+          file.path(out_location_dir, "grid100_GlobalPredictors-amsterdam-ga.csv"), 
           row.names = FALSE)

@@ -1,7 +1,8 @@
 input_data:
   Amsterdam_NO2PredictionPerModel: data\output\06 predicting\Amsterdam_NO2PredictionPerModel.gpkg
+  Amsterdam_NO2PredictionPerModel_ga: data\output\06 predicting\Amsterdam_NO2PredictionPerModel_ga.gpkg
   Bayreuth_NO2PredictionPerModel: data\output\06 predicting\Bayreuth_NO2PredictionPerModel.gpkg
-  Bayreuth_NO2PredictionPerModel_ZI: data\input\TooBigData\Bayreuth\Bayreuth_NO2PredictionPerModel_ZI.gpkg
+  Bayreuth_NO2PredictionPerModel_ZI: data\output\06 predicting\Bayreuth_NO2PredictionPerModel_ZI.gpkg
   Hamburg_NO2PredictionPerModel: data\output\06 predicting\Hamburg_NO2PredictionPerModel.gpkg
   Utrecht_NO2PredictionPerModel: data\output\06 predicting\Utrecht_NO2PredictionPerModel.gpkg
 

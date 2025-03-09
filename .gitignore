@@ -10,3 +10,10 @@ rosm.cache/osm/10_525_337.png
 rosm.cache/osm/10_526_336.png
 rosm.cache/osm/10_526_337.png
 .vscode/settings.json
+data/input/SpatialPlaces/Amsterdam_greater_area.gpkg
+data/input/SpatialPlaces/Bayreuth_ZI_grid.cpg
+data/input/SpatialPlaces/Bayreuth_ZI_grid.dbf
+data/input/SpatialPlaces/Bayreuth_ZI_grid.prj
+data/input/SpatialPlaces/Bayreuth_ZI_grid.qmd
+data/input/SpatialPlaces/Bayreuth_ZI_grid.shp
+data/input/SpatialPlaces/Bayreuth_ZI_grid.shx

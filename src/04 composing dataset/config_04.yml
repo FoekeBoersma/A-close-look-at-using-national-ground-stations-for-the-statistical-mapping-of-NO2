@@ -1,5 +1,6 @@
 input_data:
   amsterdam100m_grid:  data/input/TooBigData/Amsterdam/grid100Amsterdam.shp
+  amsterdam100m_greater_area: data/input/SpatialPlaces/Amsterdam_greater_area.gpkg
   bayreuth100m_grid:  data/input/TooBigData/Bayreuth/grid100Bayreuth.gpkg
   hamburg100m_grid:  data/input/TooBigData/Hamburg/grid100Hamburg.gpkg
   utrecht100m_grid:  data/input/TooBigData/Utrecht/grid100Utrecht.gpkg
@@ -9,6 +10,7 @@ input_data:
   polygonbuilding_studyArea: data/input/BuildingDensity/polygonbuilding_studyArea.shp
   polygonbuilding_DNL: data/input/TooBigData/polygonbuildings_DNL.shp
   grid_bldden_amsterdam: data/output/04 composing dataset/grid_bldden_100m_amsterdam.shp
+  grid_bldden_amsterdam_greater_area: data/output/04 composing dataset/points_bldden_100m_amsterdam_ga.shp
   grid_bldden_bayreuth: data/output/04 composing dataset/grid_bldden_100m_bayreuth.shp
   grid_bldden_hamburg: data/output/04 composing dataset/grid_bldden_100m_hamburg.shp
   grid_bldden_utrecht: data/output/04 composing dataset/grid_bldden_100m_utrecht.shp

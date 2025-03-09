@@ -31,13 +31,14 @@ except ModuleNotFoundError as e:
 
 predicting_dataset = config_06.input_data['predicting_dataset']
 grid100_amsterdam_csv = config_06.input_data['grid100_amsterdam_csv']
+grid100_amsterdam_ga_csv = config_06.input_data['grid100_amsterdam_ga_csv']
 grid100_bayreuth_csv = config_06.input_data['grid100_bayreuth_csv']
 grid100_hamburg_csv = config_06.input_data['grid100_hamburg_csv']
 grid100_utrecht_csv = main_dir  + os.sep + config_06.input_data['grid100_utrecht_csv']
-output_map= config_06.output['output_map']
-output_map_excel= config_06.output['output_map_excel']
+output_map=main_dir + os.sep  + config_06.output['output_map']
+output_map_excel= main_dir  + os.sep + config_06.output['output_map_excel']
 # specify city so that it is included in output-name.
-city = "Amsterdam100"
+city = "Amsterdam100_ga"
 
 #import training dataset 
 df_train = pd.read_csv(predicting_dataset, sep=',')
@@ -53,7 +54,10 @@ df_train = df_train.drop(['Unnamed: 0', 'Longitude', 'Latitude'], axis=1)
 #import testing dataset - to this unprocessed dataset, the predicted NO2 will eventually be added.
 
 #AMSTERDAM
-df_test_xy = pd.read_csv(grid100_amsterdam_csv, sep=',')
+# df_test_xy = pd.read_csv(grid100_amsterdam_csv, sep=',')
+
+#AMSTERDAM - greater area
+df_test_xy = pd.read_csv(grid100_amsterdam_ga_csv, sep=',')
 
 # #HAMBURG
 # df_test_xy = pd.read_csv(grid100_hamburg_csv, sep=',')
@@ -98,6 +102,11 @@ df_test_xy_RF = df_test_xy
 df_test_xy_RF['predicted_NO2_RF'] = predicted_NO2
 
 #export to .xlsx & .csv
+if not os.path.exists(output_map_excel):
+    os.makedirs(output_map_excel)
+
+if not os.path.exists(output_map):
+    os.makedirs(output_map)
 df_test_xy_RF.to_excel(output_map_excel+'Predicting NO2-RF'+ str(city)+'_xy.xlsx')
 df_test_xy_RF.to_csv(output_map+'Predicting NO2-RF'+ str(city)+'_xy.csv')
 

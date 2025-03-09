@@ -21,7 +21,8 @@ out_location_dir <- normalizePath(file.path(parent_directory, config$out_locatio
 
 # IMPORT GEODATA
 # Import area of interest at 100m resolution
-amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_grid), winslash = "/")
+# amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_grid), winslash = "/")
+amsterdam100m_grid_dir <- normalizePath(file.path(parent_directory, config$input_data$amsterdam100m_greater_area), winslash = "/")
 grid <- st_read(amsterdam100m_grid_dir)
 
 ## == data processing == ##
@@ -30,7 +31,8 @@ grid <- st_read(amsterdam100m_grid_dir)
 grid_sf <- st_as_sf(grid)
 
 #Modelpredictions
-modelPredictions <- read.csv(file.path(parent_directory, config$input_data$amsterdam_predicting_no2_allmodels))
+# modelPredictions <- read.csv(file.path(parent_directory, config$input_data$amsterdam_predicting_no2_allmodels))
+modelPredictions <- read.csv(file.path(parent_directory, config$input_data$amsterdam_predicting_no2_allmodels_ga)) # greater Amsterdam area
 modelPredictions_sf <- st_as_sf(modelPredictions, coords=c("Longitude", "Latitude"), crs=4326)
 #make crs similar
 modelPredictions_sf <- st_transform(modelPredictions_sf, crs=st_crs(grid_sf))
@@ -42,4 +44,4 @@ if ("fid" %in% names(amsterdam_NO2PredictionPerModel)) {
   amsterdam_NO2PredictionPerModel <- dplyr::select(amsterdam_NO2PredictionPerModel, -fid)
 }
 #export option
-sf::st_write(amsterdam_NO2PredictionPerModel, dsn=file.path(out_location_dir, 'Amsterdam_NO2PredictionPerModel.gpkg'), driver = "GPKG")
+sf::st_write(amsterdam_NO2PredictionPerModel, dsn=file.path(out_location_dir, 'Amsterdam_NO2PredictionPerModel_ga.gpkg'), driver = "GPKG")
